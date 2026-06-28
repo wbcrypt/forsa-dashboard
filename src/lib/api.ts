@@ -165,9 +165,9 @@ export const documentsApi = {
 export const paymentsApi = {
   listReceipts: (params?: any) => api.get('/payments/receipts', { params }),
   verifyPayment: (id: string, notes?: string) =>
-    api.patch(\`/payments/\${id}/verify\`, { status: 'verified', notes }),
+    api.patch(`/payments/\${id}/verify`, { status: 'verified', notes }),
   rejectPayment: (id: string, reason: string) =>
-    api.patch(\`/payments/\${id}/verify\`, { status: 'rejected', reason }),
+    api.patch(`/payments/\${id}/verify`, { status: 'rejected', reason }),
   generateSchedule: (data: unknown) => api.post('/payments/schedules', data),
   getSchedule: (applicationId: string) =>
     api.get(`/payments/schedules/applications/${applicationId}`),
