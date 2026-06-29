@@ -265,7 +265,7 @@ export default function PartnersPage() {
             <div className="col-span-2">
               <FormField label="Notes" hint="Internal notes about this partnership">
                 <textarea className="input h-20 resize-none" value={form.notes}
-                  onChange={set('notes')} placeholder="Partnership details, commission terms, etc." />
+                  onChange={set('notes')} placeholder="Partnership details, commission terms, etc.' />
               </FormField>
             </div>
           </div>
