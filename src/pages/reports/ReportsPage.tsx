@@ -14,7 +14,7 @@ const COLORS = ['#1B2A5E', '#14b8a6', '#6270f1', '#f59e0b', '#ef4444', '#8b5cf6'
 function exportCSV(data: unknown[], filename: string) {
   if (!data?.length) return
   const keys = Object.keys(data[0] as object)
-  const csv = [keys.join(','), ...data.map((row: unknown) => keys.map(k => (row as Record<string, unknown>)[k] ?? '').join(','))].join('\n')
+  const csv = [keys.join(','), ...data.map((row: unknown) => keys.map(k => (row as Record<string, unknown>)[k] ?? '').join(',"))].join('\n")
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click()

@@ -123,7 +123,7 @@ export default function RankingPage() {
       app.scores.planning_readiness || '', app.scores.commitment_readiness || '',
       app.recommendation || '', app.current_status || '', app.interviewLanguage || ''
     ])
-    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(','))].join('\n')
+    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(',"))].join('\n")
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = 'forsa-rankings.csv'; a.click()

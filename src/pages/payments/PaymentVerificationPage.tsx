@@ -75,7 +75,7 @@ export default function PaymentVerificationPage() {
       p.payment_method || '', p.reference_number || '',
       p.status || '', p.bank_name || '',
     ])
-    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(','))].join('\n')
+    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(',"))].join('\n")
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = `forsa-payments-${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click()

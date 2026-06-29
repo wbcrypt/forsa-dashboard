@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || '') + '/api/v1'
+const BASE_URL = '/api/v1'
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -165,9 +165,9 @@ export const documentsApi = {
 export const paymentsApi = {
   listReceipts: (params?: any) => api.get('/payments/receipts', { params }),
   verifyPayment: (id: string, notes?: string) =>
-    api.patch(`/payments/\${id}/verify`, { status: 'verified', notes }),
+    api.patch(\`/payments/\${id}/verify\`, { status: 'verified', notes }),
   rejectPayment: (id: string, reason: string) =>
-    api.patch(`/payments/\${id}/verify`, { status: 'rejected', reason }),
+    api.patch(\`/payments/\${id}/verify\`, { status: 'rejected', reason }),
   generateSchedule: (data: unknown) => api.post('/payments/schedules', data),
   getSchedule: (applicationId: string) =>
     api.get(`/payments/schedules/applications/${applicationId}`),
