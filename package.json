@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prebuild": "node fix-quotes.js"
+    "prebuild": "node fix-quotes.cjs"
   },
   "dependencies": {
     "react": "^18.2.0",
