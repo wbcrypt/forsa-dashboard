@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { paymentsApi } from '../../lib/api'
 import api from '../../lib/api'
-import { Card, Badge, Table, Pagination, EmptyState, ErrorState, Modal, Alert, Spinner, Tabs } from '../../components/ui'
+import { Card, Badge, Table, Pagination, EmptyState, ErrorState, Modal, Alert, LoadingSpinner as Spinner, Tabs } from '../../components/ui'
 import {
   CreditCard, CheckCircle, XCircle, Clock, AlertTriangle,
   Download, Search, X, Eye, Filter, FileText
@@ -75,7 +75,7 @@ export default function PaymentVerificationPage() {
       p.payment_method || '', p.reference_number || '',
       p.status || '', p.bank_name || '',
     ])
-    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(',"))].join('\n")
+    const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = `forsa-payments-${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click()

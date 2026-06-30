@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { applicationsApi } from '../../lib/api'
-import { Card, Badge, Alert, Modal, Spinner, ErrorState } from '../../components/ui'
+import { Card, Badge, Alert, Modal, LoadingSpinner as Spinner, ErrorState } from '../../components/ui'
 import { AIReportPanel } from '../../components/AIReportPanel'
 import { ActivationChecklist } from '../../components/ActivationChecklist'
 import {
