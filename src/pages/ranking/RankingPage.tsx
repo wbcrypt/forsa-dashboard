@@ -55,7 +55,7 @@ export default function RankingPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['applications-ranking'],
-    queryFn: () => applicationsApi.list({ limit: 200 }).then(r => r.data),
+    queryFn: () => applicationsApi.list({ limit: 100 }).then(r => r.data),
   })
 
   const apps: any[] = data?.data || []

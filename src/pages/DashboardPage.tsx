@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { reportsApi, collectionsApi, applicationsApi } from '../lib/api'
+import { reportsApi, collectionsApi, applicationsApi, studentsApi } from '../lib/api'
 import { Card, Badge, LoadingSpinner, ErrorState } from '../components/ui'
 import { Link } from 'react-router-dom'
 import {
@@ -66,6 +66,11 @@ export default function DashboardPage() {
     queryFn: () => applicationsApi.list({ page: 1, limit: 5 }).then(r => r.data),
   })
 
+  const { data: studentsMeta } = useQuery({
+    queryKey: ['students-count'],
+    queryFn: () => studentsApi.list({ page: 1, limit: 1 }).then(r => r.data),
+  })
+
   if (isLoading) return <LoadingSpinner className="h-64" />
   if (isError) return <ErrorState onRetry={refetch} message="Could not load dashboard data" />
 
@@ -100,8 +105,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
           label={t('totalStudents')}
-          value={parseInt(s.active_students || '0').toLocaleString()}
-          sub="Active financings"
+          value={(studentsMeta?.meta?.total ?? parseInt(s.active_students || '0')).toLocaleString()}
+          sub={`${parseInt(s.active_students || '0')} active financings`}
           icon={GraduationCap}
           color="teal"
         />
