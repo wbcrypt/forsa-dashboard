@@ -367,4 +367,4 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
     </Modal>
   )
 }
-export const Spinner = ({ className = '' }: { className?: string }) => <div className={} />
+export const Spinner = ({ className = '' }: { className?: string }) => <div className={className} />
