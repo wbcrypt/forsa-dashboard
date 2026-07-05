@@ -113,6 +113,12 @@ export const membershipApi = {
   reject: (id: string, reason: string) => api.post(`/membership-requests/${id}/reject`, { reason }),
 }
 
+// ─── Digital Student Pass (Phase 2 T-205/T-206) ───────────────────────────────
+export const digitalPassApi = {
+  list: () => api.get('/digital-passes'),
+  revoke: (id: string, reason: string) => api.post(`/digital-passes/${id}/revoke`, { reason }),
+}
+
 // ─── Applications ─────────────────────────────────────────────────────────────
 export const applicationsApi = {
   list: (params?: Record<string, unknown>) => api.get('/applications', { params }),
