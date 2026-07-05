@@ -148,6 +148,7 @@ export const pipelineApi = {
   overrideDecision: (runId: string, data: unknown) =>
     api.post(`/pipeline/runs/${runId}/override`, data),
   listFraudRecords: () => api.get('/pipeline/fraud-records'),
+  listCapitalQueue: () => api.get('/pipeline/capital-queue'),
 }
 
 // ─── Universities ─────────────────────────────────────────────────────────────
