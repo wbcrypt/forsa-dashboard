@@ -155,6 +155,22 @@ export default function ApplicationDetailPage() {
       )}
       {runError && <Alert type="error" message={runError} onClose={() => setRunError('')} />}
 
+      {/* T-213/T-214/T-217 — the actual "Admin decision flow" action panel.
+          Was entirely missing before this pass: pipelineApi.submitDecision
+          existed in lib/api.ts but no page anywhere ever called it, so a
+          pipeline run pausing at Stage 8 for human review had no UI path
+          to actually submit that decision. */}
+      {app.current_status === 'under_review' && app.current_pipeline_run_id && (
+        <HumanDecisionPanel
+          pipelineRunId={app.current_pipeline_run_id}
+          hasPermission={hasPermission}
+          onDecided={() => {
+            qc.invalidateQueries({ queryKey: ['application', id] })
+            toast('Decision submitted', 'success')
+          }}
+        />
+      )}
+
       {/* Key info row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
@@ -514,6 +530,152 @@ export default function ApplicationDetailPage() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+// T-213/T-214/T-217 — the full outcome set + CEO override + fraud flag.
+// Three distinct actions, three distinct permissions:
+// - Normal decision (pipeline.review, enforced server-side): any of the
+//   outcomes below, subject to K-12's dual/executive-approver consensus.
+// - CEO override (financing.override): bypasses that consensus entirely —
+//   only shown to a user actually holding the permission, not just hidden
+//   via CSS (the real gate is server-side regardless).
+// - Fraud (fraud.flag): a separate, more restrictive action — permanently
+//   blacklists the student, not just this one financing decision.
+function HumanDecisionPanel({ pipelineRunId, hasPermission, onDecided }: {
+  pipelineRunId: string
+  hasPermission: (p: string) => boolean
+  onDecided: () => void
+}) {
+  const [decision, setDecision] = useState<'approved' | 'rejected' | 'on_hold' | 'needs_more_documents' | 'waiting_list'>('approved')
+  const [approvedAmount, setApprovedAmount] = useState('')
+  const [financingTier, setFinancingTier] = useState<'' | 'silver' | 'gold'>('')
+  const [notes, setNotes] = useState('')
+  const [error, setError] = useState('')
+  const [showFraudModal, setShowFraudModal] = useState(false)
+  const [showOverrideModal, setShowOverrideModal] = useState(false)
+  const [fraudReason, setFraudReason] = useState('')
+
+  const decisionMutation = useMutation({
+    mutationFn: () => pipelineApi.submitDecision(pipelineRunId, {
+      decision,
+      approvedAmount: approvedAmount ? parseFloat(approvedAmount) : undefined,
+      notes: notes || undefined,
+      financingTier: decision === 'approved' && financingTier ? financingTier : undefined,
+    }),
+    onSuccess: (res) => {
+      if (res.data?.status === 'awaiting_additional_approver') {
+        setError(res.data.message)
+      } else {
+        setNotes(''); setApprovedAmount(''); setFinancingTier('')
+        onDecided()
+      }
+    },
+    onError: (err: any) => setError(err?.response?.data?.message || 'Submission failed'),
+  })
+
+  const fraudMutation = useMutation({
+    mutationFn: () => pipelineApi.flagFraud(pipelineRunId, fraudReason),
+    onSuccess: () => { setShowFraudModal(false); setFraudReason(''); onDecided() },
+    onError: (err: any) => setError(err?.response?.data?.message || 'Fraud flag failed'),
+  })
+
+  const overrideMutation = useMutation({
+    mutationFn: () => pipelineApi.overrideDecision(pipelineRunId, {
+      decision: decision === 'rejected' ? 'rejected' : 'approved',
+      approvedAmount: approvedAmount ? parseFloat(approvedAmount) : undefined,
+      notes: notes || 'CEO override',
+      financingTier: financingTier || undefined,
+    }),
+    onSuccess: () => { setShowOverrideModal(false); onDecided() },
+    onError: (err: any) => setError(err?.response?.data?.message || 'Override failed'),
+  })
+
+  return (
+    <Card className="border-2 border-navy-100">
+      <p className="text-sm font-semibold text-gray-900 mb-1">Submit Decision</p>
+      <p className="text-xs text-gray-400 mb-4">This application is awaiting human review (Stage 8).</p>
+
+      {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+
+      <div className="space-y-3">
+        <FormField label="Outcome" required>
+          <select className="input" value={decision} onChange={e => setDecision(e.target.value as any)}>
+            <option value="approved">Approved</option>
+            <option value="rejected">Financing Not Approved At This Time</option>
+            <option value="on_hold">On Hold</option>
+            <option value="needs_more_documents">More Information Required</option>
+            <option value="waiting_list">Waiting List</option>
+          </select>
+        </FormField>
+
+        {decision === 'approved' && (
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Approved Amount">
+              <input type="number" className="input" value={approvedAmount} onChange={e => setApprovedAmount(e.target.value)} placeholder="Optional — defaults to requested amount" />
+            </FormField>
+            <FormField label="Financing Tier">
+              <select className="input" value={financingTier} onChange={e => setFinancingTier(e.target.value as any)}>
+                <option value="">Not set</option>
+                <option value="silver">Silver (semester)</option>
+                <option value="gold">Gold (academic year)</option>
+              </select>
+            </FormField>
+          </div>
+        )}
+
+        <FormField label="Notes">
+          <textarea className="input h-20 resize-none" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Reviewer notes (visible in the audit trail)" />
+        </FormField>
+
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => decisionMutation.mutate()} disabled={decisionMutation.isPending} className="btn-teal">
+            {decisionMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+            Submit Decision
+          </button>
+          {hasPermission('fraud.flag') && (
+            <button onClick={() => setShowFraudModal(true)} className="btn-secondary text-red-600">
+              🚩 Flag Fraud
+            </button>
+          )}
+          {hasPermission('financing.override') && (
+            <button onClick={() => setShowOverrideModal(true)} className="btn-secondary text-amber-700">
+              ⚡ CEO Override
+            </button>
+          )}
+        </div>
+      </div>
+
+      <Modal open={showFraudModal} onClose={() => setShowFraudModal(false)} title="Flag Confirmed Fraud">
+        <div className="space-y-4">
+          <Alert type="warning" message="This permanently blacklists the student — forged documents, false identity, false guarantor, or material misrepresentation. This cannot be undone from this screen." />
+          <FormField label="Reason" required>
+            <textarea className="input h-24 resize-none" value={fraudReason} onChange={e => setFraudReason(e.target.value)} placeholder="Describe the confirmed fraud…" />
+          </FormField>
+          <div className="flex gap-3">
+            <button onClick={() => setShowFraudModal(false)} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={() => fraudMutation.mutate()} disabled={fraudMutation.isPending || !fraudReason.trim()}
+              className="flex-1 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 disabled:opacity-50">
+              Confirm Fraud
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={showOverrideModal} onClose={() => setShowOverrideModal(false)} title="CEO Override">
+        <div className="space-y-4">
+          <Alert type="warning" message="This finalizes the decision immediately, bypassing the dual/executive-approver requirement. Always distinctly audited." />
+          <p className="text-sm text-gray-600">Outcome: <strong>{decision === 'rejected' ? 'Rejected' : 'Approved'}</strong> (set above)</p>
+          <div className="flex gap-3">
+            <button onClick={() => setShowOverrideModal(false)} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={() => overrideMutation.mutate()} disabled={overrideMutation.isPending || !notes.trim()}
+              className="flex-1 py-2 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 disabled:opacity-50">
+              Confirm Override
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </Card>
   )
 }
 

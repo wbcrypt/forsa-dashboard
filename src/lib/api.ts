@@ -139,6 +139,15 @@ export const pipelineApi = {
   getRun: (runId: string) => api.get(`/pipeline/runs/${runId}`),
   submitDecision: (runId: string, data: unknown) =>
     api.post(`/pipeline/runs/${runId}/human-decision`, data),
+  // T-217/T-214 — deliberately separate actions from submitDecision above:
+  // fraud is an identity-trust action, override bypasses the dual/
+  // executive-approver consensus requirement entirely. Both gated behind
+  // their own backend permissions (fraud.flag / financing.override).
+  flagFraud: (runId: string, reason: string, evidenceNotes?: string) =>
+    api.post(`/pipeline/runs/${runId}/fraud`, { reason, evidenceNotes }),
+  overrideDecision: (runId: string, data: unknown) =>
+    api.post(`/pipeline/runs/${runId}/override`, data),
+  listFraudRecords: () => api.get('/pipeline/fraud-records'),
 }
 
 // ─── Universities ─────────────────────────────────────────────────────────────
