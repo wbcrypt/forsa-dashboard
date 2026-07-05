@@ -105,6 +105,14 @@ export const studentsApi = {
   getEvents: (id: string) => api.get(`/students/${id}/exceptional-events`),
 }
 
+// ─── Membership (Phase 2 T-203/T-204) ─────────────────────────────────────────
+export const membershipApi = {
+  list: (params?: { status?: string }) => api.get('/membership-requests', { params }),
+  get: (id: string) => api.get(`/membership-requests/${id}`),
+  approve: (id: string) => api.post(`/membership-requests/${id}/approve`),
+  reject: (id: string, reason: string) => api.post(`/membership-requests/${id}/reject`, { reason }),
+}
+
 // ─── Applications ─────────────────────────────────────────────────────────────
 export const applicationsApi = {
   list: (params?: Record<string, unknown>) => api.get('/applications', { params }),
