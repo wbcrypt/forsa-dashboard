@@ -22,6 +22,12 @@ import SettingsPage from './pages/SettingsPage'
 import RankingPage from './pages/ranking/RankingPage'
 import ApplicationWorkflowPage from './pages/applications/ApplicationWorkflowPage'
 import PaymentVerificationPage from './pages/payments/PaymentVerificationPage'
+import MembershipQueuePage from './pages/pending/MembershipQueuePage'
+import FinancingQueuePage from './pages/pending/FinancingQueuePage'
+import AIQueuePage from './pages/pending/AIQueuePage'
+import WaitingListPage from './pages/pending/WaitingListPage'
+import DigitalPassPage from './pages/pending/DigitalPassPage'
+import FraudRecordsPage from './pages/pending/FraudRecordsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -59,6 +65,13 @@ function AppRoutes() {
         <Route path="audit" element={<AuditPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        {/* Phase 2 membership-first nav scaffolding — see MASTER_TASK_LIST.md T-221 */}
+        <Route path="membership-queue" element={<MembershipQueuePage />} />
+        <Route path="financing-queue" element={<FinancingQueuePage />} />
+        <Route path="ai-queue" element={<AIQueuePage />} />
+        <Route path="waiting-list" element={<WaitingListPage />} />
+        <Route path="digital-pass" element={<DigitalPassPage />} />
+        <Route path="fraud-records" element={<FraudRecordsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

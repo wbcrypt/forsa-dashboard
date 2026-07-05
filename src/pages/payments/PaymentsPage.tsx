@@ -22,7 +22,7 @@ export default function PaymentsPage() {
   const ledger = finance?.ledger || []
   const recent = finance?.recentDisbursements || []
 
-  const totalReceivables = Object.values(receivables).reduce((sum, v) => sum + parseFloat(v as string || '0'), 0)
+  const totalReceivables = Object.values(receivables).reduce<number>((sum, v) => sum + parseFloat((v as string) || '0'), 0)
 
   return (
     <div className="space-y-5">

@@ -10,18 +10,33 @@ import { format } from 'date-fns'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
+  // Core pipeline vocabulary
   { value: 'new_lead', label: 'New Lead' },
+  { value: 'contacted', label: 'Contacted' },
   { value: 'waiting_for_documents', label: 'Waiting for Docs' },
+  { value: 'documents_received', label: 'Docs Received' },
   { value: 'under_review', label: 'Under Review' },
+  { value: 'capital_queue', label: 'Capital Queue' },
   { value: 'approved_level1', label: 'Approved L1' },
   { value: 'approved_level2', label: 'Approved L2' },
   { value: 'approved_level3', label: 'Approved L3' },
   { value: 'contract_sent', label: 'Contract Sent' },
   { value: 'contract_signed', label: 'Contract Signed' },
+  { value: 'university_paid', label: 'University Paid' },
   { value: 'active_student', label: 'Active Student' },
   { value: 'completed', label: 'Completed' },
+  { value: 'appealing', label: 'Appealing' },
   { value: 'rejected', label: '🥉 Bronze Pathway' },
   { value: 'on_hold', label: 'On Hold' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+  // Admin Dashboard "V2" workflow vocabulary (ApplicationWorkflowPage) — see T-107
+  { value: 'applied', label: 'Applied' },
+  { value: 'ai_interview_completed', label: 'AI Interview' },
+  { value: 'internal_review', label: 'Internal Review' },
+  { value: 'pre_approved', label: 'Pre-Approved' },
+  { value: 'document_verification', label: 'Activation Meeting' },
+  { value: 'contracts_signed', label: 'Contract Signed (V2)' },
+  { value: 'university_payment', label: 'University Payment' },
 ]
 
 export default function ApplicationsPage() {

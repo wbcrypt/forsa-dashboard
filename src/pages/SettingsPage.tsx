@@ -3,8 +3,17 @@ import { Card, Alert } from '../components/ui'
 import { Shield, Globe, Info, ExternalLink } from 'lucide-react'
 import { useLocale } from '../hooks/useLocale'
 import { LOCALES, Locale } from '../lib/i18n'
+import { API_BASE_URL } from '../lib/api'
 import { useState } from 'react'
 import clsx from 'clsx'
+
+// Derive absolute URLs for links that need to open in a new tab (relative
+// URLs work fine for axios, but <a target="_blank"> needs an absolute href
+// to resolve against the API host rather than this app's own origin when
+// VITE_API_URL is unset and the API is on a different host).
+const API_ORIGIN = /^https?:\/\//i.test(API_BASE_URL) ? API_BASE_URL : `${window.location.origin}${API_BASE_URL}`
+const MFA_SETUP_URL = `${API_ORIGIN}/auth/mfa/setup`
+const SWAGGER_URL = `${API_ORIGIN}/docs`
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -92,7 +101,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-amber-800">Multi-Factor Authentication</p>
               <p className="text-xs text-amber-700 mt-0.5">Protect your account with a TOTP authenticator app</p>
             </div>
-            <a href="http://localhost:3000/api/v1/auth/mfa/setup" target="_blank" rel="noopener noreferrer"
+            <a href={MFA_SETUP_URL} target="_blank" rel="noopener noreferrer"
               className="btn-secondary text-xs flex items-center gap-1">
               Setup MFA <ExternalLink size={11} />
             </a>
@@ -111,9 +120,9 @@ export default function SettingsPage() {
             { label: 'Version', value: 'FORSA OS v1.0' },
             { label: 'Frontend', value: 'React 18 + Vite + Tailwind CSS' },
             { label: 'Backend', value: 'NestJS + PostgreSQL + Redis' },
-            { label: 'API Base', value: 'http://localhost:3000/api/v1', link: 'http://localhost:3000/api/v1/docs' },
-            { label: 'Environment', value: 'Development' },
-            { label: 'Swagger UI', value: 'http://localhost:3000/api/v1/docs', link: 'http://localhost:3000/api/v1/docs' },
+            { label: 'API Base', value: API_ORIGIN, link: SWAGGER_URL },
+            { label: 'Environment', value: import.meta.env.MODE === 'production' ? 'Production' : 'Development' },
+            { label: 'Swagger UI', value: SWAGGER_URL, link: SWAGGER_URL },
           ].map(item => (
             <div key={item.label} className="flex gap-3">
               <dt className="text-xs text-gray-400 w-24 flex-shrink-0 pt-0.5">{item.label}</dt>

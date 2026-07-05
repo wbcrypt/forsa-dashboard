@@ -62,7 +62,10 @@ const WORKFLOW_STAGES = [
     icon: Calendar,
     color: 'bg-gray-100 text-gray-600',
     activeColor: 'bg-teal-50 text-teal-700 border-teal-200',
-    statuses: ['activation_meeting'],
+    // Backend's ApplicationStatus enum only defines 'document_verification' for
+    // this stage (no 'activation_meeting' value exists server-side) — recognize
+    // both so the timeline highlights correctly regardless of which one is set.
+    statuses: ['activation_meeting', 'document_verification'],
   },
 
   {
@@ -186,7 +189,7 @@ export default function ApplicationWorkflowPage() {
   const [showAdvance, setShowAdvance] = useState(false)
   const [showReject, setShowReject] = useState(false)
   const [notes, setNotes] = useState('')
-  const [tab, setTab] = useState<'workflow' | 'ai_report' | 'details'>('workflow')
+  const [tab, setTab] = useState<'workflow' | 'ai_report' | 'details' | 'activation'>('workflow')
 
   const { data: app, isLoading, isError, refetch } = useQuery({
     queryKey: ['application-workflow', id],
@@ -243,6 +246,7 @@ export default function ApplicationWorkflowPage() {
       'internal_review': 'pre_approved',
       'under_review': 'pre_approved',
       'pre_approved': 'document_verification',
+      'activation_meeting': 'contracts_signed',
       'document_verification': 'contracts_signed',
       'contracts_signed': 'approved_level2',
       'contract_signed': 'approved_level2',

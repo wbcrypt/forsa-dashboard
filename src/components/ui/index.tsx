@@ -22,6 +22,16 @@ const statusColors: Record<string, string> = {
   completed: 'bg-gray-100 text-gray-600',
   withdrawn: 'bg-gray-100 text-gray-500',
   appealing: 'bg-orange-50 text-orange-600',
+  // Application Workflow V2 vocabulary (ApplicationWorkflowPage) — kept alongside
+  // the core 16-status machine above until they're unified (see D-004)
+  applied: 'bg-blue-50 text-blue-700',
+  ai_interview_completed: 'bg-purple-50 text-purple-700',
+  internal_review: 'bg-amber-50 text-amber-700',
+  pre_approved: 'bg-teal-50 text-teal-700',
+  activation_meeting: 'bg-teal-50 text-teal-700',
+  document_verification: 'bg-teal-50 text-teal-700',
+  contracts_signed: 'bg-indigo-50 text-indigo-700',
+  university_payment: 'bg-green-50 text-green-700',
   // Payment
   pending: 'bg-yellow-50 text-yellow-700',
   confirmed: 'bg-green-50 text-green-700',
@@ -103,6 +113,15 @@ const statusLabels: Record<string, string> = {
   elite_trust: 'Elite',
   due_soon: 'Due Soon',
   due_today: 'Due Today',
+  // Application Workflow V2 vocabulary
+  applied: 'Applied',
+  ai_interview_completed: 'AI Interview',
+  internal_review: 'Internal Review',
+  pre_approved: 'Pre-Approved',
+  activation_meeting: 'Activation Meeting',
+  document_verification: 'Activation Meeting',
+  contracts_signed: 'Contract Signed',
+  university_payment: 'University Payment',
 }
 
 export function Badge({ status, label }: { status: string; label?: string }) {

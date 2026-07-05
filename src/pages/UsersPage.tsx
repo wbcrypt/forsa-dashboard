@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { usersApi } from '../lib/api'
-import { Card, Badge, Table, Modal, FormField, Alert, EmptyState, ErrorState } from '../components/ui'
-import { Plus, Shield, Loader2, X } from 'lucide-react'
+import { usersApi, rolesApi } from '../lib/api'
+import { Card, Badge, Table, Modal, FormField, Alert, EmptyState, ErrorState, LoadingSpinner as Spinner } from '../components/ui'
+import { Plus, Shield, Loader2, X, UserCog, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '../context/AuthContext'
@@ -33,6 +33,7 @@ export default function UsersPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rolesUser, setRolesUser] = useState<{ id: string; full_name: string } | null>(null)
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['users'],
@@ -86,7 +87,7 @@ export default function UsersPage() {
 
       <Card padding={false}>
         {!isError && (
-          <Table headers={['User', 'Status', 'MFA', 'Last Login', 'Joined']} loading={isLoading}>
+          <Table headers={['User', 'Status', 'MFA', 'Last Login', 'Joined', 'Roles']} loading={isLoading}>
             {users.map((u: Record<string, unknown>) => (
               <tr key={u.id as string} className={`table-row ${u.id === currentUser?.id ? 'bg-navy-50/20' : ''}`}>
                 <td className="table-td pl-5">
@@ -117,8 +118,20 @@ export default function UsersPage() {
                 <td className="table-td text-xs text-gray-500">
                   {u.last_login_at ? format(new Date(u.last_login_at as string), 'dd MMM yyyy · HH:mm') : 'Never logged in'}
                 </td>
-                <td className="table-td pr-5 text-xs text-gray-400">
+                <td className="table-td text-xs text-gray-400">
                   {u.created_at ? format(new Date(u.created_at as string), 'dd MMM yyyy') : '—'}
+                </td>
+                <td className="table-td pr-5">
+                  {hasPermission('user.role.assign') ? (
+                    <button
+                      onClick={() => setRolesUser({ id: u.id as string, full_name: u.full_name as string })}
+                      className="p-1.5 text-gray-400 hover:text-navy-700 hover:bg-navy-50 rounded-lg transition-colors"
+                      title="Manage roles">
+                      <UserCog size={14} />
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-300">—</span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -134,10 +147,13 @@ export default function UsersPage() {
         )}
       </Card>
 
-      <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-        <p className="text-sm font-medium text-amber-800 mb-1">Role Assignment</p>
-        <p className="text-sm text-amber-700">To assign roles to users after creation, use the API endpoint <code className="font-mono text-xs bg-amber-100 px-1 rounded">POST /api/v1/users/:id/roles</code>. Role management UI is coming in V2.</p>
-      </div>
+      {rolesUser && (
+        <RoleManagementModal
+          userId={rolesUser.id}
+          userName={rolesUser.full_name}
+          onClose={() => setRolesUser(null)}
+        />
+      )}
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Add Team Member">
         {serverError && <Alert type="error" message={serverError} />}
@@ -179,5 +195,149 @@ export default function UsersPage() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+// ─── Role Management (T-309) ───────────────────────────────────────────────────
+// Backend contract confirmed in forsa-os/src/users/users.controller.ts:
+//   GET    /users/:id/roles  -> { roles: [{id,name,description}], permissions: [...] }
+//   POST   /users/:id/roles  body: { roleId }               -> assign
+//   DELETE /users/:id/roles  body: { roleId, reason (>=5) } -> revoke
+// `GET /roles` (list of a tenant's assignable roles) is NOT wired to any
+// controller in forsa-os today — RolesService.findAllRoles exists but has no
+// route. We call it anyway (documented/expected contract) and fall back to
+// manual Role ID entry if it 404s, rather than blocking this feature on it.
+function RoleManagementModal({ userId, userName, onClose }: {
+  userId: string; userName: string; onClose: () => void
+}) {
+  const qc = useQueryClient()
+  const { toast } = useToastContext()
+  const [manualRoleId, setManualRoleId] = useState('')
+  const [selectedRoleId, setSelectedRoleId] = useState('')
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
+  const [revokeReason, setRevokeReason] = useState('')
+
+  const { data: userRoles, isLoading: loadingUserRoles, refetch: refetchUserRoles } = useQuery({
+    queryKey: ['user-roles', userId],
+    queryFn: () => usersApi.getRoles(userId).then(r => r.data),
+  })
+
+  const { data: allRoles, isError: rolesListUnavailable } = useQuery({
+    queryKey: ['roles-list'],
+    queryFn: () => rolesApi.list().then(r => r.data),
+    retry: false,
+  })
+
+  const assignedRoles: { id: string; name: string; description?: string }[] = userRoles?.roles || []
+  const availableRoles: { id: string; name: string }[] = (allRoles?.data || allRoles || [])
+  const assignableRoles = availableRoles.filter(r => !assignedRoles.some(ar => ar.id === r.id))
+
+  const assignMutation = useMutation({
+    mutationFn: (roleId: string) => usersApi.assignRole(userId, roleId),
+    onSuccess: () => {
+      toast('Role assigned', 'success')
+      qc.invalidateQueries({ queryKey: ['user-roles', userId] })
+      qc.invalidateQueries({ queryKey: ['users'] })
+      setSelectedRoleId(''); setManualRoleId('')
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast(e?.response?.data?.message || 'Failed to assign role', 'error')
+    },
+  })
+
+  const revokeMutation = useMutation({
+    mutationFn: ({ roleId, reason }: { roleId: string; reason: string }) =>
+      usersApi.revokeRole(userId, roleId, reason),
+    onSuccess: () => {
+      toast('Role revoked', 'success')
+      qc.invalidateQueries({ queryKey: ['user-roles', userId] })
+      qc.invalidateQueries({ queryKey: ['users'] })
+      setRevokeTarget(null); setRevokeReason('')
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast(e?.response?.data?.message || 'Failed to revoke role', 'error')
+    },
+  })
+
+  return (
+    <Modal open={true} onClose={onClose} title={`Manage Roles — ${userName}`}>
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Current Roles</p>
+          {loadingUserRoles ? <Spinner className="h-16" /> : assignedRoles.length === 0 ? (
+            <p className="text-sm text-gray-400">No roles assigned yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {assignedRoles.map(r => (
+                <div key={r.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{r.name}</p>
+                    {r.description && <p className="text-xs text-gray-400">{r.description}</p>}
+                  </div>
+                  <button onClick={() => { setRevokeTarget({ id: r.id, name: r.name }); setRevokeReason('') }}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Revoke role">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {revokeTarget && (
+          <div className="p-3 bg-red-50 border border-red-100 rounded-xl space-y-2">
+            <p className="text-sm text-red-800">Revoke <strong>{revokeTarget.name}</strong> — reason required (min 5 characters):</p>
+            <input className="input text-sm" value={revokeReason} onChange={e => setRevokeReason(e.target.value)}
+              placeholder="e.g. Role change, offboarding, incorrect grant…" />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setRevokeTarget(null)} className="btn-secondary text-xs">Cancel</button>
+              <button
+                onClick={() => revokeMutation.mutate({ roleId: revokeTarget.id, reason: revokeReason })}
+                disabled={revokeReason.trim().length < 5 || revokeMutation.isPending}
+                className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
+                {revokeMutation.isPending ? 'Revoking…' : 'Confirm Revoke'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Assign a Role</p>
+          {rolesListUnavailable ? (
+            <div className="space-y-2">
+              <Alert type="warning" message="The list of assignable roles isn't available yet (backend has no GET /roles endpoint — see T-309 dependency note). Paste a role ID directly to assign it." />
+              <div className="flex gap-2">
+                <input className="input text-sm flex-1" value={manualRoleId} onChange={e => setManualRoleId(e.target.value)}
+                  placeholder="Role UUID" />
+                <button onClick={() => assignMutation.mutate(manualRoleId)}
+                  disabled={!manualRoleId.trim() || assignMutation.isPending}
+                  className="btn-primary text-sm disabled:opacity-50">
+                  {assignMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Assign'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <select className="input text-sm flex-1" value={selectedRoleId} onChange={e => setSelectedRoleId(e.target.value)}>
+                <option value="">Select a role…</option>
+                {assignableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+              <button onClick={() => assignMutation.mutate(selectedRoleId)}
+                disabled={!selectedRoleId || assignMutation.isPending}
+                className="btn-primary text-sm disabled:opacity-50">
+                {assignMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : 'Assign'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button onClick={() => refetchUserRoles()} className="text-xs text-gray-400 hover:text-gray-600">Refresh</button>
+        </div>
+      </div>
+    </Modal>
   )
 }

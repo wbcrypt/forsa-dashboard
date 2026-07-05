@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Users, FileText, Building2, Briefcase,
   CreditCard, AlertTriangle, BarChart3, ScrollText, Settings,
   Shield, Bell, ChevronLeft, ChevronRight, LogOut, Search,
-  GraduationCap, X, Trophy, ClipboardCheck, BadgeCheck
+  GraduationCap, X, Trophy, ClipboardCheck, BadgeCheck,
+  UserPlus, Landmark, Brain, Hourglass, QrCode, ShieldAlert
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useLocale } from '../../hooks/useLocale'
@@ -15,6 +16,13 @@ const navItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/', permission: null },
   { key: 'students', icon: GraduationCap, path: '/students', permission: 'student.view' },
   { key: 'applications', icon: FileText, path: '/applications', permission: 'application.view' },
+  // Phase 2 membership-first prep (T-221) — pending-state pages until the
+  // backend's membership/AI-assessment/fraud endpoints (T-201-T-206, T-217)
+  // land; see src/pages/pending/*.tsx.
+  { key: 'membershipQueue', icon: UserPlus, path: '/membership-queue', permission: 'application.view' },
+  { key: 'financingQueue', icon: Landmark, path: '/financing-queue', permission: 'application.view' },
+  { key: 'aiQueue', icon: Brain, path: '/ai-queue', permission: 'application.view' },
+  { key: 'waitingList', icon: Hourglass, path: '/waiting-list', permission: 'application.view' },
   { key: 'universities', icon: Building2, path: '/universities', permission: 'university.view' },
   { key: 'partners', icon: Briefcase, path: '/partners', permission: 'partner.view' },
   { key: 'payments', icon: CreditCard, path: '/payments', permission: 'payment.view' },
@@ -23,6 +31,8 @@ const navItems = [
   { key: 'audit', icon: ScrollText, path: '/audit', permission: 'report.audit' },
   { key: 'ranking', icon: Trophy, path: '/ranking', permission: 'application.view' },
   { key: 'paymentVerify', icon: BadgeCheck, path: '/payments/verify', permission: 'payment.view' },
+  { key: 'digitalPass', icon: QrCode, path: '/digital-pass', permission: 'student.view' },
+  { key: 'fraudRecords', icon: ShieldAlert, path: '/fraud-records', permission: 'application.view' },
   { key: 'users', icon: Shield, path: '/users', permission: 'user.view' },
   { key: 'settings', icon: Settings, path: '/settings', permission: null },
 ]

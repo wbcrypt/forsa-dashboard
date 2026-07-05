@@ -12,6 +12,7 @@ const translations: Record<Locale, Record<string, string>> = {
     universities: 'Universities', partners: 'Partners', payments: 'Payments',
     collections: 'Collections', reports: 'Reports', audit: 'Audit Log', ranking: 'AI Ranking', paymentVerify: 'Payment Verify',
     bronzePathway: 'Bronze Pathway', assignBronze: 'Assign to Bronze', bronzeMember: 'Bronze Member', ecosystemNote: 'Every applicant joins FORSA. Gold & Silver receive financing. Bronze receives ecosystem access and priority.',
+    membershipQueue: 'Membership Queue', financingQueue: 'Financing Queue', aiQueue: 'AI Queue', waitingList: 'Waiting List', digitalPass: 'Digital Pass', fraudRecords: 'Fraud Records',
     users: 'Users & Roles', settings: 'Settings', signOut: 'Sign out',
     newStudent: 'New Student', newApplication: 'New Application',
     search: 'Search students, applications...', loading: 'Loading...',
@@ -30,7 +31,8 @@ const translations: Record<Locale, Record<string, string>> = {
   fr: {
     dashboard: 'Tableau de bord', students: 'Étudiants', applications: 'Dossiers',
     universities: 'Universités', partners: 'Partenaires', payments: 'Paiements',
-    collections: 'Recouvrement', reports: 'Rapports', audit: "Journal d'audit",
+    collections: 'Recouvrement', reports: 'Rapports', audit: "Journal d'audit", ranking: 'Classement IA', paymentVerify: 'Vérif. paiements',
+    membershipQueue: 'File adhésion', financingQueue: 'File financement', aiQueue: 'File IA', waitingList: "Liste d'attente", digitalPass: 'Pass numérique', fraudRecords: 'Dossiers de fraude',
     users: 'Utilisateurs', settings: 'Paramètres', signOut: 'Déconnexion',
     newStudent: 'Nouvel étudiant', newApplication: 'Nouveau dossier',
     search: 'Rechercher...', loading: 'Chargement...', save: 'Enregistrer',
@@ -49,7 +51,8 @@ const translations: Record<Locale, Record<string, string>> = {
   ar: {
     dashboard: 'لوحة التحكم', students: 'الطلاب', applications: 'الملفات',
     universities: 'الجامعات', partners: 'الشركاء', payments: 'المدفوعات',
-    collections: 'التحصيل', reports: 'التقارير', audit: 'سجل المراجعة',
+    collections: 'التحصيل', reports: 'التقارير', audit: 'سجل المراجعة', ranking: 'ترتيب الذكاء الاصطناعي', paymentVerify: 'التحقق من الدفعات',
+    membershipQueue: 'قائمة العضوية', financingQueue: 'قائمة التمويل', aiQueue: 'قائمة الذكاء الاصطناعي', waitingList: 'قائمة الانتظار', digitalPass: 'البطاقة الرقمية', fraudRecords: 'سجلات الاحتيال',
     users: 'المستخدمون', settings: 'الإعدادات', signOut: 'تسجيل الخروج',
     newStudent: 'طالب جديد', newApplication: 'ملف جديد',
     search: 'بحث...', loading: 'جاري التحميل...', save: 'حفظ',

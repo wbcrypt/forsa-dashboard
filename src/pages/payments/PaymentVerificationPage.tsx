@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { paymentsApi } from '../../lib/api'
-import api from '../../lib/api'
 import { Card, Badge, Table, Pagination, EmptyState, ErrorState, Modal, Alert, LoadingSpinner as Spinner, Tabs } from '../../components/ui'
 import {
   CreditCard, CheckCircle, XCircle, Clock, AlertTriangle,
@@ -37,17 +36,16 @@ export default function PaymentVerificationPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['payment-receipts', tab, page, search],
-    queryFn: () => api.get('/api/v1/payments/receipts', {
-      params: { status: tab === 'all' ? undefined : tab, page, limit: 20, search: search || undefined }
-    }).then(r => r.data).catch(() => ({ data: [], meta: { total: 0, totalPages: 1 } })),
+    queryFn: () => paymentsApi.listReceipts(
+      { status: tab === 'all' ? undefined : tab, page, limit: 20, search: search || undefined }
+    ).then(r => r.data).catch(() => ({ data: [], meta: { total: 0, totalPages: 1 } })),
   })
 
   const payments = data?.data || []
   const meta = data?.meta || { total: 0, totalPages: 1 }
 
   const verifyMutation = useMutation({
-    mutationFn: (paymentId: string) =>
-      api.patch(`/api/v1/payments/${paymentId}/verify`, { status: 'verified', notes: verifyNotes }),
+    mutationFn: (paymentId: string) => paymentsApi.verifyPayment(paymentId, verifyNotes),
     onSuccess: () => {
       toast('Payment verified', 'success')
       qc.invalidateQueries({ queryKey: ['payment-receipts'] })
@@ -57,8 +55,7 @@ export default function PaymentVerificationPage() {
   })
 
   const rejectMutation = useMutation({
-    mutationFn: (paymentId: string) =>
-      api.patch(`/api/v1/payments/${paymentId}/verify`, { status: 'rejected', reason: rejectReason }),
+    mutationFn: (paymentId: string) => paymentsApi.rejectPayment(paymentId, rejectReason),
     onSuccess: () => {
       toast('Payment rejected', 'error')
       qc.invalidateQueries({ queryKey: ['payment-receipts'] })

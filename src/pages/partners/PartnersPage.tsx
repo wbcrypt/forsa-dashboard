@@ -149,7 +149,9 @@ export default function PartnersPage() {
                   <td className="table-td pl-5">
                     <div className="flex items-center gap-2">
                       {p.is_founding_partner && (
-                        <Star size={13} className="text-amber-400 fill-amber-400 flex-shrink-0" title="Founding Partner" />
+                        <span title="Founding Partner" className="flex-shrink-0">
+                          <Star size={13} className="text-amber-400 fill-amber-400" />
+                        </span>
                       )}
                       <div>
                         <p className="text-sm font-medium text-gray-900">{p.name as string}</p>

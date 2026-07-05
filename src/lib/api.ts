@@ -2,6 +2,10 @@ import axios, { AxiosInstance, AxiosError } from 'axios'
 
 const BASE_URL = (import.meta.env.VITE_API_URL || '') + '/api/v1'
 
+// Exported so pages (e.g. SettingsPage's MFA-setup / Swagger links) can derive
+// the actual configured API host instead of hardcoding localhost — T-516.
+export const API_BASE_URL = BASE_URL
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -208,6 +212,25 @@ export const usersApi = {
   get: (id: string) => api.get(`/users/${id}`),
   create: (data: unknown) => api.post('/users', data),
   update: (id: string, data: unknown) => api.patch(`/users/${id}`, data),
+  deactivate: (id: string, reason: string) => api.delete(`/users/${id}`, { data: { reason } }),
+  // T-309 — role assignment. Confirmed against forsa-os/src/users/users.controller.ts:
+  // GET/POST/DELETE /users/:id/roles all exist and are wired to real service methods.
+  getRoles: (id: string) => api.get(`/users/${id}/roles`),
+  assignRole: (id: string, roleId: string) => api.post(`/users/${id}/roles`, { roleId }),
+  revokeRole: (id: string, roleId: string, reason: string) =>
+    api.delete(`/users/${id}/roles`, { data: { roleId, reason } }),
+}
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
+// NOTE: `GET /roles` is the documented/expected contract for listing a tenant's
+// assignable roles (RolesService.findAllRoles already exists server-side in
+// forsa-os/src/users/roles.service.ts), but as of this session it is NOT wired
+// to any controller route — there is no `@Controller('roles')` anywhere in
+// forsa-os/src. This call will 404 until the backend adds that route. UsersPage
+// handles the failure gracefully (falls back to manual Role ID entry) rather
+// than blocking on it — see final report for this flagged dependency.
+export const rolesApi = {
+  list: () => api.get('/roles'),
 }
 
 // ─── Execution ────────────────────────────────────────────────────────────────
