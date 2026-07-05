@@ -10,7 +10,16 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 
-type SortField = 'rank' | 'name' | 'overall' | 'educational' | 'financial' | 'planning' | 'commitment' | 'recommendation' | 'status'
+// T-211/D-003 — columns match forsa-os's household-stability.util.ts
+// dimensions (dropped the old educational_readiness/financial_readiness/
+// planning_readiness/commitment_readiness/interview_quality names, which
+// no longer exist in ai_report.scores as of the InterviewPage.tsx prompt
+// rewrite). Showing the 4 highest-weighted of the 5 dimensions
+// (householdStability 35%, financialCapacity 25%, academicCommitment 20%,
+// documentationQuality 10%) to keep the same 4-column table width —
+// aiInterviewAssessment (10%, tied lowest) is still in the raw data, just
+// not its own sortable column here.
+type SortField = 'rank' | 'name' | 'overall' | 'householdStability' | 'financialCapacity' | 'academicCommitment' | 'documentationQuality' | 'recommendation' | 'status'
 type SortDir = 'asc' | 'desc'
 
 const RECOMMENDATION_CONFIG: Record<string, { color: string; bg: string; icon: string }> = {
@@ -60,7 +69,11 @@ export default function RankingPage() {
 
   const apps: any[] = data?.data || []
 
-  // Parse AI report for each app
+  // Parse AI report for each app. T-211 — ai_score_overall/ai_recommendation
+  // are now computed server-side (applications.service.ts#create, from the
+  // approved D-003 weights) and are the reliable source; aiReport.scores is
+  // the raw per-dimension breakdown only, never a combined "overall" figure
+  // anymore (the LLM's own arithmetic was never trustworthy for that).
   const enriched = useMemo(() => apps.map(app => {
     let aiReport: any = {}
     try { if (app.ai_report) aiReport = JSON.parse(app.ai_report) } catch {}
@@ -68,7 +81,8 @@ export default function RankingPage() {
       ...app,
       aiReport,
       scores: aiReport.scores || {},
-      recommendation: aiReport.recommendation || app.ai_recommendation || '',
+      overallScore: app.ai_score_overall ?? null,
+      recommendation: app.ai_recommendation || '',
       interviewLanguage: aiReport.interview_language || app.interview_language || '',
     }
   }), [apps])
@@ -90,11 +104,11 @@ export default function RankingPage() {
     let va: any, vb: any
     switch (sortField) {
       case 'name': va = `${a.first_name} ${a.last_name}`; vb = `${b.first_name} ${b.last_name}`; break
-      case 'overall': va = a.scores.overall_forsa_score || a.ai_score_overall || 0; vb = b.scores.overall_forsa_score || b.ai_score_overall || 0; break
-      case 'educational': va = a.scores.educational_readiness || 0; vb = b.scores.educational_readiness || 0; break
-      case 'financial': va = a.scores.financial_readiness || 0; vb = b.scores.financial_readiness || 0; break
-      case 'planning': va = a.scores.planning_readiness || 0; vb = b.scores.planning_readiness || 0; break
-      case 'commitment': va = a.scores.commitment_readiness || 0; vb = b.scores.commitment_readiness || 0; break
+      case 'overall': va = a.overallScore || 0; vb = b.overallScore || 0; break
+      case 'householdStability': va = a.scores.householdStability || 0; vb = b.scores.householdStability || 0; break
+      case 'financialCapacity': va = a.scores.financialCapacity || 0; vb = b.scores.financialCapacity || 0; break
+      case 'academicCommitment': va = a.scores.academicCommitment || 0; vb = b.scores.academicCommitment || 0; break
+      case 'documentationQuality': va = a.scores.documentationQuality || 0; vb = b.scores.documentationQuality || 0; break
       case 'recommendation': va = a.recommendation; vb = b.recommendation; break
       case 'status': va = a.current_status; vb = b.current_status; break
       default: va = 0; vb = 0
@@ -115,12 +129,12 @@ export default function RankingPage() {
   }
 
   const exportCSV = () => {
-    const headers = ['Rank', 'Name', 'University', 'Program', 'Overall Score', 'Educational', 'Financial', 'Planning', 'Commitment', 'Recommendation', 'Status', 'Interview Language']
+    const headers = ['Rank', 'Name', 'University', 'Program', 'Overall Score', 'Household Stability', 'Financial Capacity', 'Academic Commitment', 'Documentation Quality', 'Recommendation', 'Status', 'Interview Language']
     const rows = sorted.map((app, i) => [
       i + 1, `${app.first_name} ${app.last_name}`, app.university_name || '', app.program_name || '',
-      app.scores.overall_forsa_score || '',
-      app.scores.educational_readiness || '', app.scores.financial_readiness || '',
-      app.scores.planning_readiness || '', app.scores.commitment_readiness || '',
+      app.overallScore ?? '',
+      app.scores.householdStability || '', app.scores.financialCapacity || '',
+      app.scores.academicCommitment || '', app.scores.documentationQuality || '',
       app.recommendation || '', app.current_status || '', app.interviewLanguage || ''
     ])
     const csv = [headers.join(','), ...rows.map((r: any[]) => r.map(v => `"${v}"`).join(','))].join('\n')
@@ -130,12 +144,12 @@ export default function RankingPage() {
   }
 
   // Stats
-  const withScores = enriched.filter(a => a.scores.overall_forsa_score)
+  const withScores = enriched.filter(a => a.overallScore != null)
   const avgScore = withScores.length > 0
-    ? Math.round(withScores.reduce((s, a) => s + (a.scores.overall_forsa_score || 0), 0) / withScores.length)
+    ? Math.round(withScores.reduce((s, a) => s + (a.overallScore || 0), 0) / withScores.length)
     : 0
   const goldCount = enriched.filter(a => a.recommendation === 'Gold Candidate').length
-  const hasInterview = enriched.filter(a => a.scores.overall_forsa_score).length
+  const hasInterview = withScores.length
 
   return (
     <div className="space-y-5">
@@ -242,10 +256,10 @@ export default function RankingPage() {
                       { label: 'Rank', field: 'rank' as SortField, w: 'w-16' },
                       { label: 'Applicant', field: 'name' as SortField, w: 'min-w-44' },
                       { label: 'Overall', field: 'overall' as SortField, w: 'w-28' },
-                      { label: 'Educational', field: 'educational' as SortField, w: 'w-28' },
-                      { label: 'Financial', field: 'financial' as SortField, w: 'w-28' },
-                      { label: 'Planning', field: 'planning' as SortField, w: 'w-28' },
-                      { label: 'Commitment', field: 'commitment' as SortField, w: 'w-28' },
+                      { label: 'Household', field: 'householdStability' as SortField, w: 'w-28' },
+                      { label: 'Financial', field: 'financialCapacity' as SortField, w: 'w-28' },
+                      { label: 'Academic', field: 'academicCommitment' as SortField, w: 'w-28' },
+                      { label: 'Documents', field: 'documentationQuality' as SortField, w: 'w-28' },
                       { label: 'AI Rec.', field: 'recommendation' as SortField, w: 'w-32' },
                       { label: 'Status', field: 'status' as SortField, w: 'w-28' },
                     ].map(col => (
@@ -281,22 +295,22 @@ export default function RankingPage() {
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          {app.scores.overall_forsa_score ? (
+                          {app.overallScore != null ? (
                             <div>
-                              <p className="text-base font-bold text-gray-900">{app.scores.overall_forsa_score}</p>
+                              <p className="text-base font-bold text-gray-900">{app.overallScore}</p>
                               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1 w-20">
                                 <div className={clsx('h-full rounded-full',
-                                  app.scores.overall_forsa_score >= 75 ? 'bg-green-500' :
-                                  app.scores.overall_forsa_score >= 50 ? 'bg-teal-500' : 'bg-amber-400'
-                                )} style={{ width: `${app.scores.overall_forsa_score}%` }} />
+                                  app.overallScore >= 75 ? 'bg-green-500' :
+                                  app.overallScore >= 50 ? 'bg-teal-500' : 'bg-amber-400'
+                                )} style={{ width: `${app.overallScore}%` }} />
                               </div>
                             </div>
                           ) : <span className="text-xs text-gray-300">No interview</span>}
                         </td>
-                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.educational_readiness} /></td>
-                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.financial_readiness} /></td>
-                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.planning_readiness} /></td>
-                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.commitment_readiness} /></td>
+                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.householdStability} /></td>
+                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.financialCapacity} /></td>
+                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.academicCommitment} /></td>
+                        <td className="px-3 py-3 w-28"><ScoreBar score={app.scores.documentationQuality} /></td>
                         <td className="px-3 py-3">
                           {rec ? (
                             <span className={clsx('inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border', rec.bg, rec.color)}>
@@ -335,8 +349,8 @@ export default function RankingPage() {
                             <p className="text-xs text-gray-400">{app.university_name}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            {app.scores.overall_forsa_score && (
-                              <p className="text-lg font-bold text-gray-900">{app.scores.overall_forsa_score}</p>
+                            {app.overallScore != null && (
+                              <p className="text-lg font-bold text-gray-900">{app.overallScore}</p>
                             )}
                             {rec && (
                               <span className={clsx('text-xs px-1.5 py-0.5 rounded-full border', rec.bg, rec.color)}>
@@ -347,10 +361,10 @@ export default function RankingPage() {
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                           {[
-                            { label: 'Educ.', score: app.scores.educational_readiness },
-                            { label: 'Financial', score: app.scores.financial_readiness },
-                            { label: 'Planning', score: app.scores.planning_readiness },
-                            { label: 'Commitment', score: app.scores.commitment_readiness },
+                            { label: 'Household', score: app.scores.householdStability },
+                            { label: 'Financial', score: app.scores.financialCapacity },
+                            { label: 'Academic', score: app.scores.academicCommitment },
+                            { label: 'Documents', score: app.scores.documentationQuality },
                           ].map(d => (
                             <div key={d.label}>
                               <div className="flex justify-between text-xs text-gray-400 mb-0.5">
