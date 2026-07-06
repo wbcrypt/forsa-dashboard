@@ -235,7 +235,7 @@ export default function UniversityDetailPage() {
             <FormField label="Effective Date">
               <input type="date" className="input" value={agreeForm.effectiveDate} onChange={e => setAgreeForm(f => ({ ...f, effectiveDate: e.target.value }))} />
             </FormField>
-            <FormField label="Max Financing Amount">
+            <FormField label="Max Tuition Facilitation Amount">
               <input type="number" className="input" value={agreeForm.maxFinancingAmount} onChange={e => setAgreeForm(f => ({ ...f, maxFinancingAmount: e.target.value }))} placeholder="50000" />
             </FormField>
             <FormField label="Currency">

@@ -18,7 +18,7 @@ export default function FraudRecordsPage() {
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Fraud Records</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Permanent blacklist trail — flagging fraud immediately blocks all future membership and financing requests for that identity
+          Permanent blacklist trail — flagging fraud immediately blocks all future membership and tuition facilitation plan requests for that identity
         </p>
       </div>
 

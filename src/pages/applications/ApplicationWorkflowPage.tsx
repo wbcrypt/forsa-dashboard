@@ -451,7 +451,7 @@ export default function ApplicationWorkflowPage() {
       {/* Reject Modal */}
       <Modal open={showReject} onClose={() => setShowReject(false)} title="Assign to Bronze Pathway">
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">The student will be placed in the <strong>FORSA Bronze pathway</strong>. They will keep their account, their FORSA Score, and priority consideration in the next financing cycle. They will be notified with a positive Bronze membership message.</div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">The student will be placed in the <strong>FORSA Bronze pathway</strong>. They will keep their account, their FORSA Score, and priority consideration the next time a tuition facilitation plan opens up. They will be notified with a positive Bronze membership message.</div>
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1.5">Notes for internal record (optional)</label>
             <textarea className="input h-24 resize-none text-sm" value={notes}

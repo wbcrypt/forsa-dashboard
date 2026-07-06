@@ -14,7 +14,7 @@ const CHECKLIST_ITEMS = [
   { key: 'enrollment_verified', label: 'University admission/enrollment verified', icon: GraduationCap, section: 'documents' },
   { key: 'tuition_invoice_verified', label: 'Tuition invoice verified', icon: FileText, section: 'documents' },
   { key: 'income_proof_reviewed', label: 'Income proof reviewed', icon: FileText, section: 'documents' },
-  { key: 'contracts_signed', label: 'Financing contract signed by all parties', icon: Lock, section: 'signing' },
+  { key: 'contracts_signed', label: 'Tuition facilitation agreement signed by all parties', icon: Lock, section: 'signing' },
   { key: 'lettres_de_change_signed', label: 'Lettres de change signed', icon: Lock, section: 'signing' },
   { key: 'copies_provided', label: 'Copies of all documents provided', icon: FileText, section: 'completion' },
   { key: 'student_activated', label: 'Student account activated', icon: GraduationCap, section: 'completion' },

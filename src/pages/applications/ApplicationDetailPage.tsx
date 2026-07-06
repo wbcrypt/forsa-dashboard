@@ -602,7 +602,7 @@ function HumanDecisionPanel({ pipelineRunId, hasPermission, onDecided }: {
         <FormField label="Outcome" required>
           <select className="input" value={decision} onChange={e => setDecision(e.target.value as any)}>
             <option value="approved">Approved</option>
-            <option value="rejected">Financing Not Approved At This Time</option>
+            <option value="rejected">Not Approved At This Time</option>
             <option value="on_hold">On Hold</option>
             <option value="needs_more_documents">More Information Required</option>
             <option value="waiting_list">Waiting List</option>
