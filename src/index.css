@@ -132,7 +132,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* Focus visible for accessibility */
 :focus-visible {
-  outline: 2px solid #1B2A5E;
+  outline: 2px solid #1B3A8C;
   outline-offset: 2px;
 }
 

@@ -157,20 +157,20 @@ export default function DashboardPage() {
               <AreaChart data={leadTrend}>
                 <defs>
                   <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1B2A5E" stopOpacity={0.08} />
-                    <stop offset="95%" stopColor="#1B2A5E" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#1B3A8C" stopOpacity={0.08} />
+                    <stop offset="95%" stopColor="#1B3A8C" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.12} />
-                    <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#00C4C8" stopOpacity={0.12} />
+                    <stop offset="95%" stopColor="#00C4C8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e5e7eb', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }} />
-                <Area type="monotone" dataKey="Leads" stroke="#1B2A5E" strokeWidth={2} fill="url(#gL)" dot={false} />
-                <Area type="monotone" dataKey="Converted" stroke="#14b8a6" strokeWidth={2} fill="url(#gC)" dot={false} />
+                <Area type="monotone" dataKey="Leads" stroke="#1B3A8C" strokeWidth={2} fill="url(#gL)" dot={false} />
+                <Area type="monotone" dataKey="Converted" stroke="#00C4C8" strokeWidth={2} fill="url(#gC)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e5e7eb' }}
                   formatter={(v: number) => [`${v.toLocaleString()} TND`, 'Collected']} />
-                <Bar dataKey="Collected" fill="#14b8a6" radius={[5, 5, 0, 0]} />
+                <Bar dataKey="Collected" fill="#00C4C8" radius={[5, 5, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

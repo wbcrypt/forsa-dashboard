@@ -53,7 +53,7 @@ function ScoreRing({ score, label, size = 64 }: { score: number; label: string; 
   const r = size / 2 - 6
   const circ = 2 * Math.PI * r
   const dash = (score / 100) * circ
-  const color = score >= 75 ? '#10b981' : score >= 50 ? '#14b8a6' : score >= 30 ? '#f59e0b' : '#ef4444'
+  const color = score >= 75 ? '#10b981' : score >= 50 ? '#00C4C8' : score >= 30 ? '#f59e0b' : '#ef4444'
   return (
     <div className="flex flex-col items-center gap-1">
       <div style={{ width: size, height: size }} className="relative">

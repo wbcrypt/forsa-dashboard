@@ -9,7 +9,7 @@ import {
 import { format } from 'date-fns'
 import { TrendingUp, DollarSign, Users, Building2, Download } from 'lucide-react'
 
-const COLORS = ['#1B2A5E', '#14b8a6', '#6270f1', '#f59e0b', '#ef4444', '#8b5cf6']
+const COLORS = ['#1B3A8C', '#00C4C8', '#35599E', '#f59e0b', '#ef4444', '#8b5cf6']
 
 function exportCSV(data: unknown[], filename: string) {
   if (!data?.length) return
@@ -96,12 +96,12 @@ export default function ReportsPage() {
                         }))}>
                           <defs>
                             <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#1B2A5E" stopOpacity={0.1} />
-                              <stop offset="95%" stopColor="#1B2A5E" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#1B3A8C" stopOpacity={0.1} />
+                              <stop offset="95%" stopColor="#1B3A8C" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
-                              <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#00C4C8" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#00C4C8" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -109,8 +109,8 @@ export default function ReportsPage() {
                           <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
                           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }} />
                           <Legend wrapperStyle={{ fontSize: 12 }} />
-                          <Area type="monotone" dataKey="New Leads" stroke="#1B2A5E" fill="url(#g1)" strokeWidth={2} dot={false} />
-                          <Area type="monotone" dataKey="Converted" stroke="#14b8a6" fill="url(#g2)" strokeWidth={2} dot={false} />
+                          <Area type="monotone" dataKey="New Leads" stroke="#1B3A8C" fill="url(#g1)" strokeWidth={2} dot={false} />
+                          <Area type="monotone" dataKey="Converted" stroke="#00C4C8" fill="url(#g2)" strokeWidth={2} dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
@@ -130,7 +130,7 @@ export default function ReportsPage() {
                           <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
                             formatter={(v: number) => [`${v.toLocaleString()} TND`, 'Collected']} />
-                          <Bar dataKey="Collected" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Collected" fill="#00C4C8" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
