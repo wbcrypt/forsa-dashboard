@@ -47,6 +47,9 @@ const statusColors: Record<string, string> = {
   default_risk: 'bg-red-100 text-red-700',
   defaulted: 'bg-red-900/10 text-red-800',
   waived: 'bg-gray-100 text-gray-500',
+  // Guarantor invitation lifecycle
+  pending_invitation: 'bg-amber-50 text-amber-700',
+  declined: 'bg-red-50 text-red-600',
   // University / Partner
   active: 'bg-green-50 text-green-700',
   prospect: 'bg-gray-100 text-gray-600',
@@ -91,6 +94,8 @@ const statusColors: Record<string, string> = {
 }
 
 const statusLabels: Record<string, string> = {
+  pending_invitation: 'Pending Invitation',
+  declined: 'Declined',
   new_lead: 'New Lead',
   rejected: '🥉 Bronze Pathway',
   waiting_for_documents: 'Waiting for Docs',

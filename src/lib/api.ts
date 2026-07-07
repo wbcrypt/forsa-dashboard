@@ -101,6 +101,7 @@ export const studentsApi = {
   getApplications: (id: string) => api.get(`/students/${id}/applications`),
   getPayments: (id: string) => api.get(`/students/${id}/payments`),
   addGuarantor: (id: string, data: unknown) => api.post(`/students/${id}/guarantors`, data),
+  resendGuarantorInvite: (id: string, guarantorId: string) => api.post(`/students/${id}/guarantors/${guarantorId}/resend-invite`),
   openEvent: (id: string, data: unknown) => api.post(`/students/${id}/exceptional-events`, data),
   getEvents: (id: string) => api.get(`/students/${id}/exceptional-events`),
 }

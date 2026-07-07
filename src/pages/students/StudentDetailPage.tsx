@@ -31,7 +31,7 @@ export default function StudentDetailPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState('overview')
   const [showGuarantorModal, setShowGuarantorModal] = useState(false)
-  const [guarantorForm, setGuarantorForm] = useState({ fullName: '', relationship: '', phone: '', employmentStatus: 'employed', monthlyIncome: '' })
+  const [guarantorForm, setGuarantorForm] = useState({ firstName: '', lastName: '', email: '', relationship: '', phone: '', employmentStatus: 'employed', monthlyIncome: '' })
   const [guarantorError, setGuarantorError] = useState('')
   const [uploadingDoc, setUploadingDoc] = useState('')
 
@@ -68,14 +68,23 @@ export default function StudentDetailPage() {
   const guarantorMutation = useMutation({
     mutationFn: (data: unknown) => studentsApi.addGuarantor(id!, data),
     onSuccess: () => {
-      toast('Guarantor added', 'success')
+      toast('Invite sent — the guarantor will receive an email to activate their portal account', 'success')
       qc.invalidateQueries({ queryKey: ['student', id] })
       setShowGuarantorModal(false)
-      setGuarantorForm({ fullName: '', relationship: '', phone: '', employmentStatus: 'employed', monthlyIncome: '' })
+      setGuarantorForm({ firstName: '', lastName: '', email: '', relationship: '', phone: '', employmentStatus: 'employed', monthlyIncome: '' })
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } }
       setGuarantorError(e?.response?.data?.message || 'Failed to add guarantor')
+    },
+  })
+
+  const resendInviteMutation = useMutation({
+    mutationFn: (guarantorId: string) => studentsApi.resendGuarantorInvite(id!, guarantorId),
+    onSuccess: () => toast('Invite resent', 'success'),
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } } }
+      toast(e?.response?.data?.message || 'Failed to resend invite', 'error')
     },
   })
 
@@ -382,13 +391,29 @@ export default function StudentDetailPage() {
                   <div key={g.guarantor_id as string} className="p-4 rounded-xl border border-gray-100">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900">{g.full_name as string}</p>
-                      <Badge status={(g.status as string) || 'active'} />
+                      <Badge status={(g.status as string) || 'pending_invitation'} />
                     </div>
                     <div className="flex gap-4 mt-2 text-xs text-gray-400">
+                      <span>{g.email as string}</span>
                       <span>{(g.role as string)?.replace(/_/g, ' ')}</span>
-                      <span>{(g.employment_status as string)?.replace(/_/g, ' ')}</span>
-                      {g.monthly_income && <span>{parseFloat(g.monthly_income as string).toLocaleString()} TND/mo</span>}
+                      <span>{(g.employmentStatus as string)?.replace(/_/g, ' ')}</span>
                     </div>
+                    {g.status === 'pending_invitation' && !g.portalActivated && (
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                        <span className="text-xs text-gray-400">
+                          Invited {g.inviteSentAt ? new Date(g.inviteSentAt as string).toLocaleDateString() : '—'}
+                          {g.inviteExpiresAt && ` · expires ${new Date(g.inviteExpiresAt as string).toLocaleDateString()}`}
+                        </span>
+                        {hasPermission('student.edit') && (
+                          <button
+                            onClick={() => resendInviteMutation.mutate(g.guarantorId as string)}
+                            disabled={resendInviteMutation.isPending}
+                            className="text-xs font-medium text-teal-600 hover:text-teal-700">
+                            Resend Invite
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -400,13 +425,28 @@ export default function StudentDetailPage() {
       {/* Add Guarantor Modal */}
       <Modal open={showGuarantorModal} onClose={() => { setShowGuarantorModal(false); setGuarantorError('') }} title="Add Guarantor">
         {guarantorError && <Alert type="error" message={guarantorError} />}
+        <p className="text-sm text-gray-500 mb-4">
+          The guarantor never signs up on their own — they'll receive a secure invite link by email to activate their portal account.
+        </p>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Full Name" required>
-              <input className="input" value={guarantorForm.fullName}
-                onChange={e => setGuarantorForm(f => ({ ...f, fullName: e.target.value }))}
-                placeholder="Ahmed Ben Amor" />
+            <FormField label="First Name" required>
+              <input className="input" value={guarantorForm.firstName}
+                onChange={e => setGuarantorForm(f => ({ ...f, firstName: e.target.value }))}
+                placeholder="Ahmed" />
             </FormField>
+            <FormField label="Last Name" required>
+              <input className="input" value={guarantorForm.lastName}
+                onChange={e => setGuarantorForm(f => ({ ...f, lastName: e.target.value }))}
+                placeholder="Ben Amor" />
+            </FormField>
+            <div className="col-span-2">
+              <FormField label="Email" required hint="The invite link is sent here">
+                <input type="email" className="input" value={guarantorForm.email}
+                  onChange={e => setGuarantorForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="ahmed.benamor@example.tn" />
+              </FormField>
+            </div>
             <FormField label="Relationship">
               <select className="input" value={guarantorForm.relationship}
                 onChange={e => setGuarantorForm(f => ({ ...f, relationship: e.target.value }))}>
@@ -445,17 +485,18 @@ export default function StudentDetailPage() {
             <button onClick={() => setShowGuarantorModal(false)} className="btn-secondary">Cancel</button>
             <button
               onClick={() => guarantorMutation.mutate({
-                fullName: guarantorForm.fullName,
+                firstName: guarantorForm.firstName,
+                lastName: guarantorForm.lastName,
+                email: guarantorForm.email,
                 relationship: guarantorForm.relationship,
                 phone: guarantorForm.phone,
                 employmentStatus: guarantorForm.employmentStatus,
-                monthlyIncome: guarantorForm.monthlyIncome ? parseFloat(guarantorForm.monthlyIncome) : undefined,
                 role: 'guarantor',
               })}
-              disabled={guarantorMutation.isPending || !guarantorForm.fullName}
+              disabled={guarantorMutation.isPending || !guarantorForm.firstName || !guarantorForm.lastName || !guarantorForm.email}
               className="btn-primary">
               {guarantorMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Add Guarantor
+              Send Invite
             </button>
           </div>
         </div>
