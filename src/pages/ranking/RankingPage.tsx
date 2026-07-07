@@ -75,13 +75,24 @@ export default function RankingPage() {
   // the raw per-dimension breakdown only, never a combined "overall" figure
   // anymore (the LLM's own arithmetic was never trustworthy for that).
   const enriched = useMemo(() => apps.map(app => {
+    // ai_report is a jsonb column — pg already parses it into an object,
+    // so it's a string only when some other layer stringified it first.
+    // Calling JSON.parse on an already-parsed object throws (silently
+    // swallowed here), leaving every per-dimension column blank.
     let aiReport: any = {}
-    try { if (app.ai_report) aiReport = JSON.parse(app.ai_report) } catch {}
+    try {
+      if (typeof app.ai_report === 'string') aiReport = JSON.parse(app.ai_report)
+      else if (app.ai_report && typeof app.ai_report === 'object') aiReport = app.ai_report
+    } catch {}
     return {
       ...app,
       aiReport,
       scores: aiReport.scores || {},
-      overallScore: app.ai_score_overall ?? null,
+      // ai_score_overall is a Postgres numeric column — the pg driver
+      // returns it as a string to avoid float precision loss, so summing
+      // it with `+` in the average calc below was doing string
+      // concatenation ("88.00" + "76.00" -> "088.0076.00"), producing NaN.
+      overallScore: app.ai_score_overall != null ? parseFloat(app.ai_score_overall) : null,
       recommendation: app.ai_recommendation || '',
       interviewLanguage: aiReport.interview_language || app.interview_language || '',
     }
