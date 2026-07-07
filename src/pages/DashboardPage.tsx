@@ -112,8 +112,8 @@ export default function DashboardPage() {
         />
         <KpiCard
           label={t('totalApplications')}
-          value={parseInt(s.in_pipeline || '0').toLocaleString()}
-          sub="In pipeline"
+          value={parseInt(s.total_applications || '0').toLocaleString()}
+          sub={`${parseInt(s.in_pipeline || '0').toLocaleString()} in pipeline`}
           icon={FileText}
           color="navy"
         />
