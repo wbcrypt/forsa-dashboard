@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <img src="/logo.png" alt="FORSA" className="w-14 h-14 mx-auto mb-4 object-contain" />
           <h1 className="text-white font-semibold text-xl">FORSA OS</h1>
-          <p className="text-navy-400 text-sm mt-1">Educational Financing Platform</p>
+          <p className="text-navy-400 text-sm mt-1">Digital Educational Ecosystem</p>
         </div>
 
         {/* Card */}
