@@ -218,7 +218,7 @@ export default function PartnersPage() {
                     </td>
                     <td className="table-td">
                       <span className="text-sm font-semibold text-teal-700">
-                        {parseFloat((c.amount as string) || '0').toLocaleString()} TND
+                        {parseFloat((c.partner_share as string) || '0').toLocaleString()} TND
                       </span>
                     </td>
                     <td className="table-td"><Badge status={c.status as string} /></td>
