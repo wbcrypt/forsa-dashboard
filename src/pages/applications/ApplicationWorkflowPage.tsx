@@ -197,14 +197,26 @@ export default function ApplicationWorkflowPage() {
     enabled: !!id,
   })
 
+  const [financingTier, setFinancingTier] = useState<'' | 'silver' | 'gold'>('')
+
   const advanceMutation = useMutation({
     mutationFn: (newStatus: string) =>
-      applicationsApi.updateStatus(id!, { status: newStatus, notes }),
+      applicationsApi.updateStatus(id!, {
+        status: newStatus, notes,
+        // Membership level is the result of the approved plan, never
+        // something a student requests — this is what actually ratchets
+        // students.membership_status up to match (applications.service.ts
+        // #transitionStatus). Without it, approving through this workflow
+        // screen silently never changed the student's real tier at all.
+        financingTier: ['approved_level1', 'approved_level2', 'approved_level3'].includes(newStatus) && financingTier
+          ? financingTier : undefined,
+      }),
     onSuccess: (_, newStatus) => {
       toast(`Status updated to ${newStatus.replace(/_/g, ' ')}`, 'success')
       qc.invalidateQueries({ queryKey: ['application-workflow', id] })
       setShowAdvance(false)
       setNotes('')
+      setFinancingTier('')
     },
     onError: () => toast('Failed to update status', 'error'),
   })
@@ -432,6 +444,21 @@ export default function ApplicationWorkflowPage() {
             </p>
             <p className="text-xs text-teal-600 mt-1">{nextStage?.desc}</p>
           </div>
+          {['approved_level1', 'approved_level2', 'approved_level3'].includes(getNextStatus()) && (
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1.5">
+                Facilitation Tier <span className="text-red-500">*</span>
+              </label>
+              <select className="input" value={financingTier} onChange={e => setFinancingTier(e.target.value as any)}>
+                <option value="">Select tier…</option>
+                <option value="silver">🥈 Silver</option>
+                <option value="gold">🥇 Gold</option>
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                The student's membership level will be updated to match automatically.
+              </p>
+            </div>
+          )}
           <div>
             <label className="text-xs font-medium text-gray-600 block mb-1.5">Notes (optional)</label>
             <textarea className="input h-20 resize-none text-sm" value={notes}
@@ -441,7 +468,9 @@ export default function ApplicationWorkflowPage() {
           <div className="flex gap-3">
             <button onClick={() => setShowAdvance(false)} className="btn-secondary flex-1">Cancel</button>
             <button onClick={() => advanceMutation.mutate(getNextStatus())}
-              disabled={advanceMutation.isPending} className="btn-teal flex-1">
+              disabled={advanceMutation.isPending ||
+                (['approved_level1', 'approved_level2', 'approved_level3'].includes(getNextStatus()) && !financingTier)}
+              className="btn-teal flex-1">
               {advanceMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
               Confirm
             </button>

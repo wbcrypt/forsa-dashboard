@@ -125,7 +125,7 @@ export const applicationsApi = {
   list: (params?: Record<string, unknown>) => api.get('/applications', { params }),
   get: (id: string) => api.get(`/applications/${id}`),
   create: (data: unknown) => api.post('/applications', data),
-  updateStatus: (id: string, data: { status: string; notes?: string }) =>
+  updateStatus: (id: string, data: { status: string; notes?: string; financingTier?: 'silver' | 'gold' }) =>
     api.patch(`/applications/${id}/status`, data),
   assign: (id: string, userId: string) => api.patch(`/applications/${id}/assign`, { userId }),
   appeal: (id: string, data: unknown) => api.post(`/applications/${id}/appeal`, data),
