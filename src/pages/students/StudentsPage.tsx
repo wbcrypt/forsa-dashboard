@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { studentsApi } from '../../lib/api'
-import { Card, Badge, Table, Pagination, EmptyState, ErrorState } from '../../components/ui'
+import { Card, Badge, Table, Pagination, EmptyState, ErrorState, TIER_STYLE, TierBadge } from '../../components/ui'
 import { Plus, Search, GraduationCap, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useLocale } from '../../hooks/useLocale'
@@ -78,13 +78,16 @@ export default function StudentsPage() {
         </div>
 
         {!isError && (
-          <Table headers={['Student', 'Contact', 'City', 'FORSA Score', 'Status', 'Joined']} loading={isLoading}>
-            {students.map((s: Record<string, unknown>) => (
+          <Table headers={['Student', 'Contact', 'City', 'FORSA Score', 'Membership', 'Status', 'Joined']} loading={isLoading}>
+            {students.map((s: Record<string, unknown>) => {
+              const tier = (s.membership_status as string) || undefined
+              const tierStyle = tier ? TIER_STYLE[tier] : undefined
+              return (
               <tr key={s.id as string} className="table-row">
                 <td className="table-td pl-5">
                   <Link to={`/students/${s.id}`} className="flex items-center gap-3 hover:opacity-80 group">
-                    <div className="w-8 h-8 bg-navy-50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-navy-100 transition-colors">
-                      <span className="text-xs font-semibold text-navy-700">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${tierStyle ? `${tierStyle.bg} group-hover:brightness-95` : 'bg-navy-50 group-hover:bg-navy-100'}`}>
+                      <span className={`text-xs font-semibold ${tierStyle ? tierStyle.text : 'text-navy-700'}`}>
                         {(s.first_name as string)?.[0]}{(s.last_name as string)?.[0]}
                       </span>
                     </div>
@@ -112,13 +115,17 @@ export default function StudentsPage() {
                   )}
                 </td>
                 <td className="table-td">
+                  <TierBadge tier={tier} />
+                </td>
+                <td className="table-td">
                   <Badge status={s.status as string} />
                 </td>
                 <td className="table-td pr-5 text-gray-400 text-xs">
                   {s.created_at ? format(new Date(s.created_at as string), 'dd MMM yyyy') : '—'}
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </Table>
         )}
 

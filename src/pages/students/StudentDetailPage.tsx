@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentsApi, documentsApi } from '../../lib/api'
-import { Card, Badge, StatCard, Tabs, LoadingSpinner, EmptyState, ErrorState, Modal, FormField, Alert } from '../../components/ui'
+import { Card, Badge, StatCard, Tabs, LoadingSpinner, EmptyState, ErrorState, Modal, FormField, Alert, TIER_STYLE, TierBadge } from '../../components/ui'
 import { ArrowLeft, FileText, CreditCard, Star, Upload, Loader2, Plus, Edit2 } from 'lucide-react'
 import { useState } from 'react'
 import { format } from 'date-fns'
@@ -130,8 +130,8 @@ export default function StudentDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-12 h-12 bg-navy-800 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-semibold text-lg">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${TIER_STYLE[student.membership_status]?.bg || 'bg-navy-800'}`}>
+              <span className={`font-semibold text-lg ${TIER_STYLE[student.membership_status] ? TIER_STYLE[student.membership_status].text : 'text-white'}`}>
                 {student.first_name?.[0]}{student.last_name?.[0]}
               </span>
             </div>
@@ -140,6 +140,7 @@ export default function StudentDetailPage() {
                 {student.first_name} {student.last_name}
               </h1>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <TierBadge tier={student.membership_status} />
                 <Badge status={student.status} />
                 <span className="text-xs text-gray-400">{student.email || 'No email'}</span>
                 {student.phone_primary && <span className="text-xs text-gray-400">{student.phone_primary}</span>}

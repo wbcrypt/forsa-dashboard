@@ -393,3 +393,25 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
   )
 }
 export const Spinner = ({ className = '' }: { className?: string }) => <div className={className} />
+
+// ─── Membership Tier Badge ──────────────────────────────────────────────────
+// Students/StudentDetail pages both only ever showed the generic lifecycle
+// `status` (active/lead/etc, "active" for nearly every real member) — the
+// actual Bronze/Silver/Gold membership_status was never rendered anywhere in
+// the admin dashboard's student views, so every row/header looked identical
+// regardless of tier.
+export const TIER_STYLE: Record<string, { label: string; icon: string; text: string; bg: string }> = {
+  gold: { label: 'Gold', icon: '🥇', text: 'text-amber-700', bg: 'bg-amber-50' },
+  silver: { label: 'Silver', icon: '🥈', text: 'text-gray-600', bg: 'bg-gray-100' },
+  bronze: { label: 'Bronze', icon: '🥉', text: 'text-orange-700', bg: 'bg-orange-50' },
+}
+
+export function TierBadge({ tier }: { tier?: string }) {
+  const style = tier ? TIER_STYLE[tier] : undefined
+  if (!style) return <span className="text-xs text-gray-300">—</span>
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
+      {style.icon} {style.label}
+    </span>
+  )
+}
