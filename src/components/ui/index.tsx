@@ -200,7 +200,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: {
       <div className={clsx('relative bg-white rounded-2xl shadow-modal w-full animate-fade-in max-h-[90vh] flex flex-col', sizes[size])}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Close" className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -285,7 +285,7 @@ export function Alert({ type = 'info', message, onClose, className }: {
     <div className={clsx('flex items-start gap-3 p-4 rounded-xl border text-sm mb-4', bg, text, className)}>
       <Icon size={16} className="mt-0.5 flex-shrink-0" />
       <span className="flex-1">{message}</span>
-      {onClose && <button onClick={onClose} className="opacity-60 hover:opacity-100 flex-shrink-0"><X size={14} /></button>}
+      {onClose && <button onClick={onClose} aria-label="Dismiss" className="opacity-60 hover:opacity-100 flex-shrink-0"><X size={14} /></button>}
     </div>
   )
 }
