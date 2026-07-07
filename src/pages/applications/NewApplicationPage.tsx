@@ -97,7 +97,7 @@ export default function NewApplicationPage() {
         </button>
         <div>
           <h1 className="page-title">New Application</h1>
-          <p className="text-sm text-gray-500">Create a new financing application</p>
+          <p className="text-sm text-gray-500">Create a new Tuition Facilitation application</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ export default function NewApplicationPage() {
         </Card>
 
         <Card>
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">Financing Details</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Tuition Facilitation Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Tuition Amount (TND)" required error={errors.tuitionAmount}>
               <input type="number" className="input" value={form.tuitionAmount} onChange={set('tuitionAmount')}

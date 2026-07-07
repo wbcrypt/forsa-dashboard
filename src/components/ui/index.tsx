@@ -92,7 +92,7 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   new_lead: 'New Lead',
-  rejected: 'Bronze Member',
+  rejected: '🥉 Bronze Pathway',
   waiting_for_documents: 'Waiting for Docs',
   documents_received: 'Docs Received',
   under_review: 'Under Review',

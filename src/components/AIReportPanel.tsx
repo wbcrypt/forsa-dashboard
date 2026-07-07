@@ -7,12 +7,11 @@ import clsx from 'clsx'
 
 interface AIReport {
   scores?: {
-    educational_readiness?: number
-    financial_readiness?: number
-    planning_readiness?: number
-    commitment_readiness?: number
-    interview_quality?: number
-    overall_forsa_score?: number
+    householdStability?: number
+    financialCapacity?: number
+    academicCommitment?: number
+    documentationQuality?: number
+    aiInterviewAssessment?: number
   }
   executive_summary?: string
   executive_summary_fr?: string
@@ -41,7 +40,7 @@ const RECOMMENDATION_CONFIG: Record<string, { color: string; bg: string; border:
   },
   'Referral Candidate': {
     color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-300',
-    icon: '🔗', desc: 'Consider referring to partner financing'
+    icon: '🔗', desc: 'Consider referring to a partner Tuition Facilitation Plan'
   },
   'Manual Review': {
     color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-300',
@@ -73,18 +72,23 @@ function ScoreRing({ score, label, size = 64 }: { score: number; label: string; 
 
 export function AIReportPanel({
   report,
+  overallScore,
   transcript,
   interviewLanguage,
   applicationId
 }: {
   report: AIReport | null
+  // T-211/D-003 — the overall score is computed server-side and stored on
+  // the application itself (ai_score_overall), never inside the report
+  // JSON — pass application.ai_score_overall here, not a report field.
+  overallScore?: number | null
   transcript?: string
   interviewLanguage?: string
   applicationId: string
 }) {
   const [showTranscript, setShowTranscript] = useState(false)
 
-  if (!report || !report.scores?.overall_forsa_score) {
+  if (!report || overallScore == null) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
         <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -113,7 +117,7 @@ export function AIReportPanel({
               <p className={clsx('text-xs mt-0.5', rec.color, 'opacity-80')}>{rec.desc}</p>
             </div>
             <div className="ms-auto text-right">
-              <p className="text-3xl font-bold text-gray-900">{report.scores.overall_forsa_score}</p>
+              <p className="text-3xl font-bold text-gray-900">{overallScore}</p>
               <p className="text-xs text-gray-400">Overall Score</p>
             </div>
           </div>
@@ -132,11 +136,10 @@ export function AIReportPanel({
           )}
         </div>
         <div className="flex justify-around flex-wrap gap-4">
-          <ScoreRing score={report.scores.educational_readiness || 0} label="Educational" />
-          <ScoreRing score={report.scores.financial_readiness || 0} label="Financial" />
-          <ScoreRing score={report.scores.planning_readiness || 0} label="Planning" />
-          <ScoreRing score={report.scores.commitment_readiness || 0} label="Commitment" />
-          <ScoreRing score={report.scores.interview_quality || 0} label="Interview Quality" />
+          <ScoreRing score={report.scores?.householdStability || 0} label="Household Stability" />
+          <ScoreRing score={report.scores?.financialCapacity || 0} label="Financial Capacity" />
+          <ScoreRing score={report.scores?.academicCommitment || 0} label="Academic Commitment" />
+          <ScoreRing score={report.scores?.documentationQuality || 0} label="Documentation Quality" />
         </div>
       </div>
 

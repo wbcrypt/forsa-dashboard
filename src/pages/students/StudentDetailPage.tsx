@@ -259,7 +259,7 @@ export default function StudentDetailPage() {
                 <LoadingSpinner className="h-32" />
               ) : applications.length === 0 ? (
                 <EmptyState icon={FileText} title="No applications"
-                  description="This student has no financing applications yet."
+                  description="This student has no Tuition Facilitation applications yet."
                   action={hasPermission('application.create')
                     ? <Link to={`/applications/new?studentId=${id}`} className="btn-primary text-sm">Create application</Link>
                     : undefined} />

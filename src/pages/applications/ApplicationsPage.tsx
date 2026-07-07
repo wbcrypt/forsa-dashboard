@@ -60,7 +60,7 @@ export default function ApplicationsPage() {
         <div>
           <h1 className="page-title">{t('applications')}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {meta.total ? `${meta.total.toLocaleString()} total applications` : 'Manage financing applications'}
+            {meta.total ? `${meta.total.toLocaleString()} total applications` : 'Manage Tuition Facilitation applications'}
           </p>
         </div>
         {hasPermission('application.create') && (
@@ -139,7 +139,7 @@ export default function ApplicationsPage() {
 
         {!isLoading && !isError && apps.length === 0 && (
           <EmptyState icon={FileText} title="No applications found"
-            description={search || status ? 'Try adjusting your filters.' : 'Create your first application to start the financing process.'}
+            description={search || status ? 'Try adjusting your filters.' : 'Create your first application to start the Tuition Facilitation process.'}
             action={!search && !status && hasPermission('application.create')
               ? <Link to="/applications/new" className="btn-primary text-sm">Create application</Link>
               : undefined}

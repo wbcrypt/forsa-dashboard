@@ -71,7 +71,7 @@ const WORKFLOW_STAGES = [
   {
     key: 'contracts_signed',
     label: 'Contract Signed',
-    desc: 'Financing agreement signed by all parties',
+    desc: 'Tuition Facilitation agreement signed by all parties',
     icon: Lock,
     color: 'bg-gray-100 text-gray-600',
     activeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -350,9 +350,9 @@ export default function ApplicationWorkflowPage() {
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🥉</span>
-                  <p className="text-sm font-semibold text-amber-800">🥉 Bronze Member</p>
+                  <p className="text-sm font-semibold text-amber-800">Bronze Pathway</p>
                 </div>
-                <p className="text-xs text-amber-600 mt-1">Applicant has been placed in the FORSA Bronze pathway.</p>
+                <p className="text-xs text-amber-600 mt-1">Not approved for a Tuition Facilitation Plan this cycle — applicant remains a Bronze member and may reapply once conditions are met.</p>
               </div>
             ) : isCompleted ? (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
@@ -377,6 +377,7 @@ export default function ApplicationWorkflowPage() {
       {tab === 'ai_report' && (
         <AIReportPanel
           report={aiReport}
+          overallScore={app.ai_score_overall}
           transcript={app.interview_transcript}
           interviewLanguage={app.interview_language}
           applicationId={id!}

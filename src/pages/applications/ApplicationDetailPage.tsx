@@ -258,7 +258,7 @@ export default function ApplicationDetailPage() {
                 ) : (
                   <div className="bg-gray-50 rounded-xl p-4 text-center">
                     <p className="text-sm text-gray-500">No decision yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Run the pipeline to generate a financing decision</p>
+                    <p className="text-xs text-gray-400 mt-1">Run the pipeline to generate a Tuition Facilitation decision</p>
                     {canRunPipeline && (
                       <button
                         onClick={() => runMutation.mutate()}
@@ -394,6 +394,7 @@ export default function ApplicationDetailPage() {
               report={(() => {
                 try { return app.ai_report ? JSON.parse(app.ai_report) : null } catch { return null }
               })()}
+              overallScore={app.ai_score_overall}
               transcript={app.interview_transcript}
               interviewLanguage={app.interview_language}
               applicationId={id!}
@@ -614,7 +615,7 @@ function HumanDecisionPanel({ pipelineRunId, hasPermission, onDecided }: {
             <FormField label="Approved Amount">
               <input type="number" className="input" value={approvedAmount} onChange={e => setApprovedAmount(e.target.value)} placeholder="Optional — defaults to requested amount" />
             </FormField>
-            <FormField label="Financing Tier">
+            <FormField label="Facilitation Tier">
               <select className="input" value={financingTier} onChange={e => setFinancingTier(e.target.value as any)}>
                 <option value="">Not set</option>
                 <option value="silver">Silver (semester)</option>

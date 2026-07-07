@@ -126,7 +126,7 @@ export default function StudentsPage() {
           <EmptyState
             icon={GraduationCap}
             title="No students found"
-            description={search || status ? 'Try adjusting your search or filters.' : 'Add your first student to start managing financing applications.'}
+            description={search || status ? 'Try adjusting your search or filters.' : 'Add your first student to start managing Tuition Facilitation applications.'}
             action={
               !search && !status && hasPermission('student.create')
                 ? <Link to="/students/new" className="btn-primary text-sm">Add first student</Link>
