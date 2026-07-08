@@ -91,6 +91,15 @@ const statusColors: Record<string, string> = {
   fully_signed: 'bg-green-50 text-green-700',
   amended: 'bg-orange-50 text-orange-600',
   voided: 'bg-red-50 text-red-500',
+  // Phase 10 — Administrator Queue visibility tags (computed server-side
+  // in applications.service.ts#findAll, not a stored status)
+  urgent: 'bg-red-50 text-red-700',
+  missing_guarantor: 'bg-orange-50 text-orange-700',
+  waiting_documents: 'bg-amber-50 text-amber-700',
+  waiting_student: 'bg-amber-50 text-amber-700',
+  waiting_university: 'bg-cyan-50 text-cyan-700',
+  waiting_list: 'bg-yellow-50 text-yellow-700',
+  ready_for_review: 'bg-teal-50 text-teal-700',
 }
 
 const statusLabels: Record<string, string> = {
@@ -133,6 +142,14 @@ const statusLabels: Record<string, string> = {
   document_verification: 'Activation Meeting',
   contracts_signed: 'Contract Signed',
   university_payment: 'University Payment',
+  // Phase 10 — Administrator Queue visibility tags
+  urgent: '⏰ Urgent',
+  missing_guarantor: 'Missing Guarantor',
+  waiting_documents: 'Waiting Documents',
+  waiting_student: 'Waiting Student',
+  waiting_university: 'Waiting University',
+  waiting_list: 'Waiting List',
+  ready_for_review: 'Ready for Review',
 }
 
 export function Badge({ status, label }: { status: string; label?: string }) {

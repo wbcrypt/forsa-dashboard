@@ -39,10 +39,26 @@ const STATUS_OPTIONS = [
   { value: 'university_payment', label: 'University Payment' },
 ]
 
+// Phase 10 — Administrator Queue visibility (FORSA_OPERATIONS_MANUAL.md §9).
+// Client-side quick filter on the computed queue_tag already returned by the
+// list endpoint — lets an admin instantly narrow to blocked applications
+// without a full page of status dropdown guesswork.
+const QUEUE_TAG_FILTERS = [
+  { value: '', label: 'All' },
+  { value: 'urgent', label: '⏰ Urgent' },
+  { value: 'missing_guarantor', label: 'Missing Guarantor' },
+  { value: 'waiting_documents', label: 'Waiting Documents' },
+  { value: 'waiting_student', label: 'Waiting Student' },
+  { value: 'waiting_university', label: 'Waiting University' },
+  { value: 'waiting_list', label: 'Waiting List' },
+  { value: 'ready_for_review', label: 'Ready for Review' },
+]
+
 export default function ApplicationsPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [queueTag, setQueueTag] = useState('')
   const { hasPermission } = useAuth()
   const { t } = useLocale()
 
@@ -51,7 +67,8 @@ export default function ApplicationsPage() {
     queryFn: () => applicationsApi.list({ page, limit: 20, search: search || undefined, status: status || undefined }).then(r => r.data),
   })
 
-  const apps = data?.data || []
+  const allApps = data?.data || []
+  const apps = queueTag ? allApps.filter((a: Record<string, unknown>) => a.queue_tag === queueTag) : allApps
   const meta = data?.meta || {}
 
   return (
@@ -71,6 +88,20 @@ export default function ApplicationsPage() {
       </div>
 
       {isError && <ErrorState onRetry={refetch} />}
+
+      {/* Phase 10 — quick queue filter chips, computed from the same
+          queue_tag every row already carries. "Allow admins to immediately
+          identify blocked applications." */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {QUEUE_TAG_FILTERS.map(f => (
+          <button key={f.value} onClick={() => setQueueTag(f.value)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              queueTag === f.value ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+            }`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       <Card padding={false}>
         <div className="flex items-center gap-3 p-4 border-b border-gray-50 flex-wrap">
@@ -99,7 +130,7 @@ export default function ApplicationsPage() {
         </div>
 
         {!isError && (
-          <Table headers={['Student', 'University / Program', 'Amount', 'Score', 'Status', 'Date']} loading={isLoading}>
+          <Table headers={['Student', 'University / Program', 'Amount', 'Score', 'Status', 'Queue', 'Date']} loading={isLoading}>
             {apps.map((app: Record<string, unknown>) => (
               <tr key={app.id as string} className="table-row">
                 <td className="table-td pl-5">
@@ -128,6 +159,9 @@ export default function ApplicationsPage() {
                 </td>
                 <td className="table-td">
                   <Badge status={app.current_status as string} />
+                </td>
+                <td className="table-td">
+                  {app.queue_tag ? <Badge status={app.queue_tag as string} /> : <span className="text-xs text-gray-300">—</span>}
                 </td>
                 <td className="table-td pr-5 text-gray-400 text-xs">
                   {app.lead_date ? format(new Date(app.lead_date as string), 'dd MMM yy') : '—'}
