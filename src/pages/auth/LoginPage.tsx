@@ -9,14 +9,24 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [tenantId, setTenantId] = useState(localStorage.getItem('lastTenantId') || '')
+  const [tenantId, setTenantId] = useState((localStorage.getItem('lastTenantId') || '').trim())
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password || !tenantId) {
+    // The Tenant ID field auto-fills from localStorage('lastTenantId') on
+    // load (below), invisible whitespace and all — a stale or corrupted
+    // stored value looks identical to a valid one but fails the backend's
+    // @IsUUID() check with a generic "Validation failed", which reads like
+    // a credentials problem. Trimming here (and email, which has the same
+    // risk from autofill/paste) is a cheap, always-correct guard against
+    // that entire class of confusing failure.
+    const cleanEmail = email.trim()
+    const cleanPassword = password
+    const cleanTenantId = tenantId.trim()
+    if (!cleanEmail || !cleanPassword || !cleanTenantId) {
       setError('Please fill in all fields')
       return
     }
@@ -25,8 +35,8 @@ export default function LoginPage() {
     setError('')
 
     try {
-      await login(email, password, tenantId)
-      localStorage.setItem('lastTenantId', tenantId)
+      await login(cleanEmail, cleanPassword, cleanTenantId)
+      localStorage.setItem('lastTenantId', cleanTenantId)
       navigate('/')
     } catch (err: any) {
       const msg = err?.response?.data?.message
