@@ -218,7 +218,9 @@ export default function ApplicationDetailPage() {
         />
         <div className="p-5">
           {tab === 'overview' && (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-6">
+              {app.completeness && <CompletenessChecklist completeness={app.completeness} />}
+              <div className="grid grid-cols-2 gap-6">
               <div>
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Application Details</h3>
                 <dl className="space-y-3">
@@ -270,6 +272,7 @@ export default function ApplicationDetailPage() {
                     )}
                   </div>
                 )}
+              </div>
               </div>
             </div>
           )}
@@ -748,5 +751,62 @@ function PipelineResult({ result, onClose }: { result: any; onClose: () => void 
         </div>
       )}
     </div>
+  )
+}
+
+// Workflow alignment fix — requirement 5: "Admin application page should
+// show a clear completeness checklist." Mirrors exactly what Stage 1 of
+// the pipeline checks (applications.service.ts#getCompleteness), so an
+// admin sees precisely why an application is or isn't ready to clear the
+// gate, instead of guessing from a raw pipeline error string.
+const DOCUMENT_LABELS: Record<string, string> = {
+  national_id: 'National ID Card',
+  bac_diploma: 'Bac Diploma',
+  university_acceptance: 'University Acceptance Letter',
+  income_proof: 'Income Proof',
+}
+
+function CompletenessRow({ done, label, sub }: { done: boolean; label: string; sub?: string }) {
+  return (
+    <div className="flex items-center gap-2.5 py-1.5">
+      {done
+        ? <CheckCircle size={16} className="text-teal-500 flex-shrink-0" />
+        : <XCircle size={16} className="text-gray-300 flex-shrink-0" />}
+      <span className={`text-sm ${done ? 'text-gray-800' : 'text-gray-400'}`}>{label}</span>
+      {sub && <span className="text-xs text-gray-400 ml-1">— {sub}</span>}
+    </div>
+  )
+}
+
+function CompletenessChecklist({ completeness }: { completeness: any }) {
+  const guarantorLabel: Record<string, string> = {
+    active: 'Accepted', pending_invitation: 'Pending', declined: 'Declined',
+  }
+  const guarantorDone = completeness.guarantor && ['active', 'pending_invitation'].includes(completeness.guarantor.status)
+
+  return (
+    <Card className={completeness.allComplete ? 'border-teal-200 bg-teal-50/30' : 'border-amber-200 bg-amber-50/30'}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Completeness Checklist</h3>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${completeness.allComplete ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'}`}>
+          {completeness.allComplete ? 'Ready for Stage 1' : 'Incomplete'}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-6">
+        <div>
+          <CompletenessRow done={completeness.programSelected} label="Program selected" />
+          {completeness.documents.map((d: any) => (
+            <CompletenessRow key={d.type} done={['verified', 'under_review'].includes(d.status)}
+              label={DOCUMENT_LABELS[d.type] || d.type}
+              sub={d.status !== 'absent' ? d.status.replace(/_/g, ' ') : undefined} />
+          ))}
+        </div>
+        <div>
+          <CompletenessRow done={!!guarantorDone}
+            label={completeness.guarantor ? `Guarantor: ${completeness.guarantor.name}` : 'Guarantor invited'}
+            sub={completeness.guarantor ? guarantorLabel[completeness.guarantor.status] || completeness.guarantor.status : 'not added yet'} />
+        </div>
+      </div>
+    </Card>
   )
 }
