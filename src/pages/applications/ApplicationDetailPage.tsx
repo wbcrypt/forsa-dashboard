@@ -46,6 +46,27 @@ export default function ApplicationDetailPage() {
     enabled: tab === 'timeline',
   })
 
+  // Phase 13 (Case Management) — "Admin now reviews the COMPLETE CASE:
+  // Case Summary, Student Summary, Guarantor Summary, Documents, AI
+  // Analysis, Completeness Score, Risk Flags, Timeline, Meeting Status."
+  const { data: caseSummary, refetch: refetchCase } = useQuery({
+    queryKey: ['case-summary', id],
+    queryFn: () => applicationsApi.getCaseSummary(id!).then(r => r.data),
+    enabled: tab === 'case',
+  })
+
+  const scheduleMeetingMutation = useMutation({
+    mutationFn: (data: any) => applicationsApi.scheduleMeeting(id!, data),
+    onSuccess: () => { refetchCase(); toast('Meeting scheduled', 'success') },
+    onError: (err: any) => toast(err?.response?.data?.message || 'Failed to schedule meeting', 'error'),
+  })
+
+  const updateMeetingMutation = useMutation({
+    mutationFn: ({ meetingId, data }: { meetingId: string; data: any }) => applicationsApi.updateMeetingStatus(meetingId, data),
+    onSuccess: () => { refetchCase(); toast('Meeting updated', 'success') },
+    onError: (err: any) => toast(err?.response?.data?.message || 'Failed to update meeting', 'error'),
+  })
+
   // Run pipeline
   const runMutation = useMutation({
     mutationFn: () => pipelineApi.run(id!),
@@ -208,6 +229,7 @@ export default function ApplicationDetailPage() {
         <Tabs
           tabs={[
             { id: 'overview', label: 'Overview' },
+            { id: 'case', label: '📋 Case Summary' },
             { id: 'documents', label: 'Documents', count: checklist?.filter((d: any) => d.status !== 'absent').length },
             { id: 'payments', label: 'Payments' },
             { id: 'timeline', label: 'Timeline' },
@@ -217,6 +239,15 @@ export default function ApplicationDetailPage() {
           onChange={setTab}
         />
         <div className="p-5">
+          {tab === 'case' && (
+            <CaseSummaryTab
+              caseSummary={caseSummary}
+              app={app}
+              onScheduleMeeting={(data) => scheduleMeetingMutation.mutate(data)}
+              onUpdateMeeting={(meetingId, data) => updateMeetingMutation.mutate({ meetingId, data })}
+              canEdit={hasPermission('application.edit')}
+            />
+          )}
           {tab === 'overview' && (
             <div className="space-y-6">
               {app.adminStage && <AdminPipelineTracker stage={app.adminStage} />}
@@ -751,6 +782,158 @@ function PipelineResult({ result, onClose }: { result: any; onClose: () => void 
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// Phase 13 (Case Management & Dual Applicant Workflow) — "FORSA does not
+// evaluate only the student. FORSA evaluates Student + Guarantor +
+// Educational Request. This entire package becomes one Case File." Admin
+// should see, in one place: Case Summary, Student Summary, Guarantor
+// Summary, Documents, AI Analysis, Completeness Score, Risk Flags,
+// Timeline, Meeting Status — everything applications.service.ts's new
+// getCaseSummary() bundles together server-side.
+const STUDENT_FIELD_LABELS: [string, string][] = [
+  ['employment_status', 'Employment Status'], ['monthly_income', 'Monthly Income (TND)'],
+  ['has_scholarship', 'Has Scholarship'], ['existing_loans_amount', 'Existing Loans (TND)'],
+  ['living_situation', 'Living Situation'], ['emergency_contact_name', 'Emergency Contact'],
+]
+const GUARANTOR_FIELD_LABELS: [string, string][] = [
+  ['relationship_to_student', 'Relationship'], ['employment_status', 'Employment Status'],
+  ['employer_name', 'Employer'], ['salary_range', 'Salary Range'], ['marital_status', 'Marital Status'],
+  ['number_of_dependents', 'Dependents'], ['home_ownership', 'Home Ownership'],
+  ['monthly_expenses', 'Monthly Expenses (TND)'], ['existing_loans_amount', 'Existing Loans (TND)'],
+  ['supporting_other_students', 'Supporting Other Students'],
+]
+
+function SummaryField({ label, value }: { label: string; value: any }) {
+  const display = value === null || value === undefined || value === '' ? '—'
+    : typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)
+  return (
+    <div className="flex justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
+      <span className="text-gray-500">{label}</span>
+      <span className="font-medium text-gray-800">{display}</span>
+    </div>
+  )
+}
+
+function MeetingScheduleForm({ onSchedule }: { onSchedule: (data: any) => void }) {
+  const [form, setForm] = useState({ scheduledAt: '', officeLocation: '', specialInstructions: '' })
+  return (
+    <div className="border border-gray-100 rounded-xl p-4 space-y-3">
+      <p className="text-sm font-semibold text-gray-800">Schedule Activation Meeting</p>
+      <input type="datetime-local" className="input-field text-sm w-full" value={form.scheduledAt}
+        onChange={e => setForm({ ...form, scheduledAt: e.target.value })} />
+      <input type="text" placeholder="Office location" className="input-field text-sm w-full" value={form.officeLocation}
+        onChange={e => setForm({ ...form, officeLocation: e.target.value })} />
+      <textarea placeholder="Special instructions (optional)" className="input-field text-sm w-full" value={form.specialInstructions}
+        onChange={e => setForm({ ...form, specialInstructions: e.target.value })} />
+      <button
+        disabled={!form.scheduledAt || !form.officeLocation}
+        onClick={() => onSchedule({ scheduledAt: new Date(form.scheduledAt).toISOString(), officeLocation: form.officeLocation, specialInstructions: form.specialInstructions || undefined })}
+        className="btn-primary text-sm disabled:opacity-50"
+      >
+        Schedule Meeting
+      </button>
+    </div>
+  )
+}
+
+const MEETING_STATUS_STYLES: Record<string, string> = {
+  scheduled: 'bg-blue-50 text-blue-700', confirmed: 'bg-teal-50 text-teal-700',
+  completed: 'bg-green-50 text-green-700', rescheduled: 'bg-amber-50 text-amber-700',
+  cancelled: 'bg-gray-100 text-gray-500',
+}
+
+function MeetingPanel({ meeting, onUpdateMeeting, onScheduleMeeting, canEdit }: {
+  meeting: any; onUpdateMeeting: (meetingId: string, data: any) => void
+  onScheduleMeeting: (data: any) => void; canEdit: boolean
+}) {
+  const [showReschedule, setShowReschedule] = useState(false)
+  if (!meeting) {
+    return canEdit ? <MeetingScheduleForm onSchedule={onScheduleMeeting} /> : (
+      <p className="text-sm text-gray-400">No meeting scheduled yet.</p>
+    )
+  }
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-800">{meeting.reference_number}</span>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${MEETING_STATUS_STYLES[meeting.status] || 'bg-gray-100 text-gray-600'}`}>
+          {meeting.status}
+        </span>
+      </div>
+      <SummaryField label="Date & Time" value={new Date(meeting.scheduled_at).toLocaleString()} />
+      <SummaryField label="Location" value={meeting.office_location} />
+      <SummaryField label="Duration" value={`${meeting.estimated_duration_minutes} min`} />
+      <SummaryField label="Attendees" value={Array.isArray(meeting.required_attendees) ? meeting.required_attendees.join(', ') : meeting.required_attendees} />
+      <SummaryField label="Required Documents" value={Array.isArray(meeting.required_documents) ? meeting.required_documents.join(', ') : meeting.required_documents} />
+      {meeting.special_instructions && <SummaryField label="Instructions" value={meeting.special_instructions} />}
+      {canEdit && !['completed', 'cancelled'].includes(meeting.status) && (
+        <div className="flex gap-2 pt-2">
+          {meeting.status === 'scheduled' && (
+            <button onClick={() => onUpdateMeeting(meeting.id, { status: 'confirmed' })} className="text-xs font-semibold text-teal-600 hover:text-teal-700">Confirm</button>
+          )}
+          <button onClick={() => onUpdateMeeting(meeting.id, { status: 'completed' })} className="text-xs font-semibold text-green-600 hover:text-green-700">Mark Completed</button>
+          <button onClick={() => setShowReschedule(s => !s)} className="text-xs font-semibold text-amber-600 hover:text-amber-700">Reschedule</button>
+          <button onClick={() => onUpdateMeeting(meeting.id, { status: 'cancelled', cancellationReason: 'Cancelled by staff' })} className="text-xs font-semibold text-red-600 hover:text-red-700">Cancel</button>
+        </div>
+      )}
+      {showReschedule && (
+        <input type="datetime-local" className="input-field text-sm w-full mt-2"
+          onChange={e => onUpdateMeeting(meeting.id, { status: 'rescheduled', newScheduledAt: new Date(e.target.value).toISOString() })} />
+      )}
+    </div>
+  )
+}
+
+function CaseSummaryTab({ caseSummary, app, onScheduleMeeting, onUpdateMeeting, canEdit }: {
+  caseSummary: any; app: any
+  onScheduleMeeting: (data: any) => void; onUpdateMeeting: (meetingId: string, data: any) => void; canEdit: boolean
+}) {
+  if (!caseSummary) return <LoadingSpinner />
+  const riskFlags: string[] = (() => {
+    try { return app?.ai_report ? (JSON.parse(app.ai_report).risk_flags || []) : [] } catch { return [] }
+  })()
+
+  return (
+    <div className="space-y-6">
+      {app.adminStage && <AdminPipelineTracker stage={app.adminStage} />}
+
+      <div className="grid grid-cols-2 gap-6">
+        <Card>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Student Summary</h3>
+          {caseSummary.student ? STUDENT_FIELD_LABELS.map(([key, label]) => (
+            <SummaryField key={key} label={label} value={caseSummary.student[key]} />
+          )) : <p className="text-sm text-gray-400">No student profile data.</p>}
+        </Card>
+        <Card>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Guarantor Summary</h3>
+          {caseSummary.guarantor ? (
+            <>
+              <SummaryField label="Name" value={`${caseSummary.guarantor.first_name} ${caseSummary.guarantor.last_name}`} />
+              {GUARANTOR_FIELD_LABELS.map(([key, label]) => (
+                <SummaryField key={key} label={label} value={caseSummary.guarantor[key]} />
+              ))}
+              <SummaryField label="Financial Profile" value={caseSummary.guarantor.financial_profile_completed_at ? 'Completed' : 'Pending'} />
+            </>
+          ) : <p className="text-sm text-gray-400">No guarantor linked yet.</p>}
+        </Card>
+      </div>
+
+      {riskFlags.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Risk Flags</h3>
+          <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
+            {riskFlags.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </Card>
+      )}
+
+      <Card>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Meeting Status</h3>
+        <MeetingPanel meeting={caseSummary.meeting} onUpdateMeeting={onUpdateMeeting} onScheduleMeeting={onScheduleMeeting} canEdit={canEdit} />
+      </Card>
     </div>
   )
 }

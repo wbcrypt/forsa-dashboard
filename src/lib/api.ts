@@ -131,6 +131,10 @@ export const applicationsApi = {
   appeal: (id: string, data: unknown) => api.post(`/applications/${id}/appeal`, data),
   getStatusHistory: (id: string) => api.get(`/applications/${id}/status-history`),
   getPipelineHistory: (id: string) => api.get(`/applications/${id}/pipeline-history`),
+  // Phase 13 (Case Management) — "Admin now reviews the COMPLETE CASE."
+  getCaseSummary: (id: string) => api.get(`/applications/${id}/case`),
+  scheduleMeeting: (id: string, data: unknown) => api.post(`/applications/${id}/meetings`, data),
+  updateMeetingStatus: (meetingId: string, data: unknown) => api.patch(`/applications/meetings/${meetingId}`, data),
 }
 
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
