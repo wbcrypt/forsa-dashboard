@@ -219,6 +219,7 @@ export default function ApplicationDetailPage() {
         <div className="p-5">
           {tab === 'overview' && (
             <div className="space-y-6">
+              {app.adminStage && <AdminPipelineTracker stage={app.adminStage} />}
               {app.completeness && <CompletenessChecklist completeness={app.completeness} />}
               <div className="grid grid-cols-2 gap-6">
               <div>
@@ -751,6 +752,71 @@ function PipelineResult({ result, onClose }: { result: any; onClose: () => void 
         </div>
       )}
     </div>
+  )
+}
+
+// Workflow architecture redesign — "the admin pipeline should represent
+// the internal operational process." This is the internal-operations
+// vocabulary (Draft → Submitted → Completeness Verification → Guarantor →
+// AI Review → Internal Review → Pre-Approval → Contract → University
+// Confirmation → Approved → University Payment → Active Student),
+// computed server-side (applications.service.ts#findOneForAdmin ->
+// application-stages.util.ts#computeAdminStage) from the same underlying
+// data the student-facing Timeline uses — never a second stored status,
+// so the two views can never silently disagree with each other.
+// Tailwind's JIT scanner needs complete, literal class strings to include
+// them in the generated CSS — `bg-${color}-50` interpolated at runtime
+// would silently produce no styling at all in a real build. A static
+// lookup keeps every class name literal in the source.
+const EXCEPTION_STYLES: Record<string, { card: string; badge: string }> = {
+  rejected: { card: 'border-amber-200 bg-amber-50/30', badge: 'bg-amber-100 text-amber-700' },
+  fraud_flagged: { card: 'border-red-200 bg-red-50/30', badge: 'bg-red-100 text-red-700' },
+  withdrawn: { card: 'border-gray-200 bg-gray-50/30', badge: 'bg-gray-100 text-gray-600' },
+}
+
+function AdminPipelineTracker({ stage }: { stage: any }) {
+  if (stage.isException) {
+    const styles = EXCEPTION_STYLES[stage.currentKey] || EXCEPTION_STYLES.withdrawn
+    return (
+      <Card className={styles.card}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin Pipeline</h3>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${styles.badge}`}>{stage.currentLabel}</span>
+        </div>
+      </Card>
+    )
+  }
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Admin Pipeline</h3>
+        <div className="flex items-center gap-2">
+          {stage.isWaitingList && <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Waiting List</span>}
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-navy-100 text-navy-700">{stage.currentLabel}</span>
+        </div>
+      </div>
+      <div className="flex items-center overflow-x-auto pb-1 -mx-1 px-1">
+        {stage.stages.map((s: any, i: number) => (
+          <div key={s.key} className="flex items-center flex-shrink-0">
+            <div className="flex flex-col items-center gap-1 w-20">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ${
+                s.status === 'done' ? 'bg-teal-500 text-white' :
+                s.status === 'current' ? 'bg-navy-800 text-white ring-2 ring-navy-200' :
+                'bg-gray-100 text-gray-400'
+              }`}>
+                {s.status === 'done' ? '✓' : i + 1}
+              </div>
+              <span className={`text-[10px] text-center leading-tight ${s.status === 'current' ? 'text-navy-800 font-semibold' : s.status === 'done' ? 'text-gray-600' : 'text-gray-400'}`}>
+                {s.label}
+              </span>
+            </div>
+            {i < stage.stages.length - 1 && (
+              <div className={`h-0.5 w-4 flex-shrink-0 -mt-4 ${s.status === 'done' ? 'bg-teal-500' : 'bg-gray-200'}`} />
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
   )
 }
 
