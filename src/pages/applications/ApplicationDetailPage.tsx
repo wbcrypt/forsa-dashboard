@@ -896,9 +896,35 @@ function CaseSummaryTab({ caseSummary, app, onScheduleMeeting, onUpdateMeeting, 
     try { return app?.ai_report ? (JSON.parse(app.ai_report).risk_flags || []) : [] } catch { return [] }
   })()
 
+  const PLAN_MONTHS: Record<string, number> = { silver: 10, gold: 12 }
+  const PLATFORM_FEE_TND = 30
+  const tier = caseSummary.application.requested_tier as 'silver' | 'gold' | null
+  const tuition = Number(caseSummary.application.tuition_amount) || 0
+  const months = tier ? PLAN_MONTHS[tier] : null
+  const estimatedMonthly = months ? tuition / months : null
+
   return (
     <div className="space-y-6">
       {app.adminStage && <AdminPipelineTracker stage={app.adminStage} />}
+
+      {/* Phase 14 (Final Case Flow Refinement) — "Admin must see: selected
+          plan Silver/Gold requested by student, system-loaded tuition
+          amount, 30 TND/month fee acknowledgment." */}
+      <Card>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Case Request</h3>
+        <div className="grid grid-cols-2 gap-x-6">
+          <div>
+            <SummaryField label="Requested Plan" value={tier ? (tier === 'gold' ? '🥇 Gold' : '🥈 Silver') : null} />
+            <SummaryField label="System-Loaded Tuition" value={tuition ? `${tuition.toLocaleString()} TND` : null} />
+            <SummaryField label="Plan Structure" value={months ? `${months} months` : null} />
+          </div>
+          <div>
+            <SummaryField label="Estimated Monthly Payment" value={estimatedMonthly !== null ? `${estimatedMonthly.toLocaleString(undefined, { maximumFractionDigits: 2 })} TND` : null} />
+            <SummaryField label="Administrative Fee" value={`${PLATFORM_FEE_TND} TND/mo`} />
+            <SummaryField label="Fee Acknowledged" value={caseSummary.application.platform_fee_acknowledged_at ? `Yes — ${new Date(caseSummary.application.platform_fee_acknowledged_at).toLocaleDateString()}` : 'Not yet'} />
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-2 gap-6">
         <Card>
@@ -921,9 +947,58 @@ function CaseSummaryTab({ caseSummary, app, onScheduleMeeting, onUpdateMeeting, 
         </Card>
       </div>
 
+      {/* Phase 14 — "Internal FORSA Stability Score V1: Guarantor
+          Stability 60%, Household Stability 20%, Payment Capacity 15%,
+          Student Stability Bonus 5%. AI must only explain the score,
+          identify risk/positive factors, and suggest meeting questions —
+          AI must never approve/reject." See STABILITY_SCORE_MODEL.md. */}
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Internal FORSA Stability Score</h3>
+          {caseSummary.stabilityScore?.overall !== null && caseSummary.stabilityScore?.overall !== undefined && (
+            <span className="text-lg font-bold text-navy-800">{caseSummary.stabilityScore.overall}<span className="text-xs text-gray-400 font-normal">/100</span></span>
+          )}
+        </div>
+        {caseSummary.stabilityScore?.breakdown ? (
+          <>
+            <div className="grid grid-cols-2 gap-x-6 mb-4">
+              <SummaryField label="Guarantor Stability (60%)" value={caseSummary.stabilityScore.breakdown.guarantorStability} />
+              <SummaryField label="Household Stability (20%)" value={caseSummary.stabilityScore.breakdown.householdStability} />
+              <SummaryField label="Payment Capacity (15%)" value={caseSummary.stabilityScore.breakdown.paymentCapacity} />
+              <SummaryField label="Student Stability Bonus (5%)" value={caseSummary.stabilityScore.breakdown.studentStabilityBonus} />
+            </div>
+            {caseSummary.stabilityScore.explanation && (
+              <div className="space-y-3 border-t border-gray-100 pt-3">
+                <div>
+                  <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Risk Factors</p>
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                    {caseSummary.stabilityScore.explanation.riskFactors.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-1">Positive Factors</p>
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                    {caseSummary.stabilityScore.explanation.positiveFactors.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-navy-600 uppercase tracking-wide mb-1">Suggested Meeting Questions</p>
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                    {caseSummary.stabilityScore.explanation.meetingQuestions.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+                <p className="text-xs text-gray-400">Confidence: {caseSummary.stabilityScore.explanation.confidenceScore}% (based on profile data completeness) — advisory only, never an approval or rejection.</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-gray-400">Not yet generated — computed automatically once the guarantor completes their Financial Responsibility Profile.</p>
+        )}
+      </Card>
+
       {riskFlags.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/30">
-          <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Risk Flags</h3>
+          <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">AI Interview Risk Flags</h3>
           <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
             {riskFlags.map((f, i) => <li key={i}>{f}</li>)}
           </ul>
