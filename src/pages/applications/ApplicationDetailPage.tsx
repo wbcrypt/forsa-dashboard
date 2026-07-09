@@ -795,14 +795,14 @@ function PipelineResult({ result, onClose }: { result: any; onClose: () => void 
 // getCaseSummary() bundles together server-side.
 const STUDENT_FIELD_LABELS: [string, string][] = [
   ['employment_status', 'Employment Status'], ['monthly_income', 'Monthly Income (TND)'],
-  ['has_scholarship', 'Has Scholarship'], ['existing_loans_amount', 'Existing Loans (TND)'],
+  ['has_scholarship', 'Has Scholarship'], ['existing_loans_amount', 'Other Monthly Debt Obligations (TND)'],
   ['living_situation', 'Living Situation'], ['emergency_contact_name', 'Emergency Contact'],
 ]
 const GUARANTOR_FIELD_LABELS: [string, string][] = [
   ['relationship_to_student', 'Relationship'], ['employment_status', 'Employment Status'],
   ['employer_name', 'Employer'], ['salary_range', 'Salary Range'], ['marital_status', 'Marital Status'],
   ['number_of_dependents', 'Dependents'], ['home_ownership', 'Home Ownership'],
-  ['monthly_expenses', 'Monthly Expenses (TND)'], ['existing_loans_amount', 'Existing Loans (TND)'],
+  ['monthly_expenses', 'Monthly Expenses (TND)'], ['existing_loans_amount', 'Other Monthly Debt Obligations (TND)'],
   ['supporting_other_students', 'Supporting Other Students'],
 ]
 
@@ -844,6 +844,11 @@ const MEETING_STATUS_STYLES: Record<string, string> = {
   completed: 'bg-green-50 text-green-700', rescheduled: 'bg-amber-50 text-amber-700',
   cancelled: 'bg-gray-100 text-gray-500',
 }
+// QA-9 fix — was rendering the raw status string directly with no label.
+const MEETING_STATUS_LABELS: Record<string, string> = {
+  scheduled: 'Scheduled', confirmed: 'Confirmed', completed: 'Completed',
+  rescheduled: 'Rescheduled', cancelled: 'Cancelled',
+}
 
 function MeetingPanel({ meeting, onUpdateMeeting, onScheduleMeeting, canEdit }: {
   meeting: any; onUpdateMeeting: (meetingId: string, data: any) => void
@@ -860,10 +865,14 @@ function MeetingPanel({ meeting, onUpdateMeeting, onScheduleMeeting, canEdit }: 
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-gray-800">{meeting.reference_number}</span>
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${MEETING_STATUS_STYLES[meeting.status] || 'bg-gray-100 text-gray-600'}`}>
-          {meeting.status}
+          {MEETING_STATUS_LABELS[meeting.status] || meeting.status}
         </span>
       </div>
-      <SummaryField label="Date & Time" value={new Date(meeting.scheduled_at).toLocaleString()} />
+      {/* QA-4 fix — explicit Africa/Tunis rather than the browser's own
+          local timezone, so this always matches the meeting_scheduled
+          email regardless of what timezone the admin's own machine
+          happens to be set to (in-person meetings happen in Tunisia). */}
+      <SummaryField label="Date & Time" value={new Date(meeting.scheduled_at).toLocaleString('fr-TN', { timeZone: 'Africa/Tunis' })} />
       <SummaryField label="Location" value={meeting.office_location} />
       <SummaryField label="Duration" value={`${meeting.estimated_duration_minutes} min`} />
       <SummaryField label="Attendees" value={Array.isArray(meeting.required_attendees) ? meeting.required_attendees.join(', ') : meeting.required_attendees} />
@@ -1102,6 +1111,17 @@ function CompletenessRow({ done, label, sub }: { done: boolean; label: string; s
   )
 }
 
+// QA-8 fix — this checklist used to list the 4 documents Phase 12's
+// workflow alignment fix required (National ID, Bac Diploma, University
+// Acceptance Letter, Income Proof) as mandatory/incomplete. Phase 14's
+// Final Case Flow Refinement removed document upload from the
+// application entirely — no application created since then will ever
+// have one, so those rows permanently showed "Incomplete" regardless of
+// the Case's real state. Replaced with what Stage 1 actually checks now
+// (program, requested plan, fee acknowledgment, guarantor) — matching
+// pipeline.service.ts#stage1Completeness exactly, same principle as
+// before: staff should never have to guess why a Case is or isn't ready
+// from a raw pipeline error string.
 function CompletenessChecklist({ completeness }: { completeness: any }) {
   const guarantorLabel: Record<string, string> = {
     active: 'Accepted', pending_invitation: 'Pending', declined: 'Declined',
@@ -1113,17 +1133,14 @@ function CompletenessChecklist({ completeness }: { completeness: any }) {
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Completeness Checklist</h3>
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${completeness.allComplete ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'}`}>
-          {completeness.allComplete ? 'Ready for Stage 1' : 'Incomplete'}
+          {completeness.allComplete ? 'Ready for Assessment' : 'Incomplete'}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-x-6">
         <div>
           <CompletenessRow done={completeness.programSelected} label="Program selected" />
-          {completeness.documents.map((d: any) => (
-            <CompletenessRow key={d.type} done={['verified', 'under_review'].includes(d.status)}
-              label={DOCUMENT_LABELS[d.type] || d.type}
-              sub={d.status !== 'absent' ? d.status.replace(/_/g, ' ') : undefined} />
-          ))}
+          <CompletenessRow done={completeness.requestedTierSelected} label="Requested plan selected (Silver/Gold)" />
+          <CompletenessRow done={completeness.platformFeeAcknowledged} label="30 TND/month fee acknowledged" />
         </div>
         <div>
           <CompletenessRow done={!!guarantorDone}
